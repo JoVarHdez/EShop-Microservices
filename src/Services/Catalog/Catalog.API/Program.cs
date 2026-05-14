@@ -2,7 +2,6 @@ using BuildingBlocks.Exceptions.Handler;
 using Carter;
 using FluentValidation;
 using Marten;
-using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 var assembly = typeof(Program).Assembly;
@@ -12,6 +11,7 @@ builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(assembly);
     config.AddOpenBehavior(typeof(BuildingBlocks.Behaviors.ValidationBehavior<,>));
+    config.AddOpenBehavior(typeof(BuildingBlocks.Behaviors.LoggingBehavior<,>));
 });
 
 builder.Services.AddValidatorsFromAssembly(assembly);

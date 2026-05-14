@@ -15,7 +15,7 @@ namespace Catalog.API.Products.GetProductById
 
             if (result == null)
             {
-                throw new ProductNotFoundException();
+                throw new ProductNotFoundException(request.Id);
             }
 
             return new GetProductByIdResult(result);

@@ -9,7 +9,7 @@ namespace Catalog.API.Products.CreateProduct
         string Description,
         decimal Price,
         string ImageUrl,
-        string CategoryId
+        List<string> Categories
     );
 
     public record CreateProductResponse(Guid Id);

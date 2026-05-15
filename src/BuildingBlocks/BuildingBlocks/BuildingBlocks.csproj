@@ -10,6 +10,7 @@
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Mapster" Version="10.0.7" />
+    <PackageReference Include="Marten" Version="8.37.0" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.5.0" />
     <PackageReference Include="WolverineFx" Version="5.39.1" />
     <!--<PackageReference Include="WolverineFx.Http" Version="5.39.1" />-->

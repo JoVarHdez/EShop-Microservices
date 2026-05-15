@@ -1,19 +1,24 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
+using Wolverine;
 
 namespace Catalog.API.Products.DeleteProduct
 {
     public record DeleteProductResponse(bool IsSuccess);
-    public class DeleteProductEndpoint : ICarterModule
+
+    public static class DeleteProductEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapDeleteProductEndpoint(this RouteGroupBuilder group)
         {
-            app.MapDelete("/products/{id}", async (Guid id, ISender sender) =>
+            group.MapDelete("/{id}", async (Guid id, IMessageBus bus) =>
             {
-                var result = await sender.Send(new DeleteProductCommand(id));
-                var response = result.Adapt<DeleteProductResponse>();
-                return Results.Ok(response);
+                var result = await bus.InvokeAsync<DeleteProductCommandResult>(new DeleteProductCommand(id));
+
+                return result switch
+                {
+                    DeleteProductResult r   => Results.Ok(r.Adapt<DeleteProductResponse>()),
+                    DeleteProductNotFound   => Results.NotFound(),
+                    _                       => Results.Problem("Unexpected result", statusCode: 500)
+                };
             })
                 .WithName("DeleteProduct")
                 .Produces<DeleteProductResponse>(StatusCodes.Status200OK)
@@ -21,6 +26,8 @@ namespace Catalog.API.Products.DeleteProduct
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Deletes a product")
                 .WithDescription("Deletes the product with the specified ID from the catalog");
+
+            return group;
         }
     }
 }

@@ -1,12 +1,10 @@
-﻿using BuildingBlocks.CQRS;
-using Catalog.API.Models;
+﻿using Catalog.API.Models;
 using FluentValidation;
 using Marten;
 
 namespace Catalog.API.Products.CreateProduct
 {
-    public record CreateProductCommand(string Name, List<string> Categories, string Description, string ImageUrl, decimal Price)
-        : ICommand<CreateProductResult>;
+    public record CreateProductCommand(string Name, List<string> Categories, string Description, string ImageUrl, decimal Price);
     public record CreateProductResult(Guid Id);
 
     public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
@@ -21,7 +19,7 @@ namespace Catalog.API.Products.CreateProduct
         }
     }
 
-    public class CreateProductCommandHandler(IDocumentSession session) : ICommandHandler<CreateProductCommand, CreateProductResult>
+    public class CreateProductCommandHandler(IDocumentSession session)
     {
         public async Task<CreateProductResult> Handle(CreateProductCommand command, CancellationToken cancellationToken)
         {

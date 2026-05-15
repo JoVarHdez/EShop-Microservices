@@ -1,26 +1,28 @@
-﻿using Carter;
-using Catalog.API.Models;
-using Mapster;
-using MediatR;
+﻿using Catalog.API.Models;
+using Marten;
 
 namespace Catalog.API.Products.GetProductByCategory
 {
     public record GetProductsByCategoryResponse(IEnumerable<Product> Products);
-    public class GetProductByCategoryEndpoint : ICarterModule
+
+    public static class GetProductByCategoryEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapGetProductByCategoryEndpoint(this RouteGroupBuilder group)
         {
-            app.MapGet("/products/category/{categoryId}", async (string categoryId, ISender sender) =>
+            group.MapGet("/category/{categoryId}", async (string categoryId, IQuerySession session, CancellationToken ct) =>
             {
-                var result = await sender.Send(new GetProductByCategoryQuery(categoryId));
-                var response = result.Adapt<GetProductsByCategoryResponse>();
-                return Results.Ok(response);
+                var products = await session.Query<Product>()
+                    .Where(p => p.Categories.Contains(categoryId))
+                    .ToListAsync(ct);
+                return TypedResults.Ok(new GetProductsByCategoryResponse(products));
             })
                 .WithName("GetProductByCategory")
                 .Produces<GetProductsByCategoryResponse>(StatusCodes.Status200OK)
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithSummary("Gets products by category")
                 .WithDescription("Retrieves a list of products that belong to the specified category.");
+
+            return group;
         }
     }
 }

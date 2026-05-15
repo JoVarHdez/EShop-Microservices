@@ -1,26 +1,27 @@
-﻿using Carter;
-using Catalog.API.Models;
-using Mapster;
-using MediatR;
+﻿using Catalog.API.Models;
+using Marten;
 
 namespace Catalog.API.Products.GetProductById
 {
     public record GetProductByIdResponse(Product Product);
-    public class GetProductByIdEndpoint : ICarterModule
+
+    public static class GetProductByIdEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapGetProductByIdEndpoint(this RouteGroupBuilder group)
         {
-            app.MapGet("/products/{id}", async (Guid id, ISender sender) =>
+            group.MapGet("/{id}", async (Guid id, IQuerySession session, CancellationToken ct) =>
             {
-                var result = await sender.Send(new GetProductByIdQuery(id));
-                var response = result.Adapt<GetProductByIdResponse>();
-                return Results.Ok(response);
+                var product = await session.LoadAsync<Product>(id, ct);
+                if (product is null) return Results.NotFound();
+                return Results.Ok(new GetProductByIdResponse(product));
             })
                 .WithName("GetProductById")
                 .Produces<GetProductByIdResponse>(StatusCodes.Status200OK)
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Gets a product by ID")
                 .WithDescription("Retrieves the details of a product with the specified ID.");
+
+            return group;
         }
     }
 }

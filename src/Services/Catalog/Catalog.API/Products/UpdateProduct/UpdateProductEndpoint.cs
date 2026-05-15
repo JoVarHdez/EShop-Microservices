@@ -1,21 +1,26 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
+using Wolverine;
 
 namespace Catalog.API.Products.UpdateProduct
 {
     public record UpdateProductRequest(Guid Id, string Name, List<string> Categories, string Description, string ImageUrl, decimal Price);
     public record UpdateProductResponse(bool IsSuccess);
-    public class UpdateProductEndpoint : ICarterModule
+
+    public static class UpdateProductEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapUpdateProductEndpoint(this RouteGroupBuilder group)
         {
-            app.MapPut("/products/{id}", async (Guid id, UpdateProductRequest request, ISender sender) =>
+            group.MapPut("/{id}", async (Guid id, UpdateProductRequest request, IMessageBus bus) =>
             {
                 var command = request.Adapt<UpdateProductCommand>();
-                var result = await sender.Send(command);
-                var response = result.Adapt<UpdateProductResponse>();
-                return Results.Ok(response);
+                var result = await bus.InvokeAsync<UpdateProductCommandResult>(command);
+
+                return result switch
+                {
+                    UpdateProductResult r   => Results.Ok(r.Adapt<UpdateProductResponse>()),
+                    UpdateProductNotFound   => Results.NotFound(),
+                    _                       => Results.Problem("Unexpected result", statusCode: 500)
+                };
             })
                 .WithName("UpdateProduct")
                 .Produces<UpdateProductResponse>(StatusCodes.Status200OK)
@@ -23,6 +28,8 @@ namespace Catalog.API.Products.UpdateProduct
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Updates an existing product")
                 .WithDescription("Updates the details of an existing product with the specified ID");
+
+            return group;
         }
     }
 }

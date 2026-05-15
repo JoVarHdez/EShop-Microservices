@@ -1,12 +1,14 @@
-﻿using BuildingBlocks.CQRS;
-using Catalog.API.Models;
+﻿using Catalog.API.Models;
 using FluentValidation;
 using Marten;
 
 namespace Catalog.API.Products.DeleteProduct
 {
-    public record DeleteProductCommand(Guid ProductId) : ICommand<DeleteProductResult>;
-    public record DeleteProductResult(bool IsSuccess);
+    public record DeleteProductCommand(Guid ProductId);
+
+    public abstract record DeleteProductCommandResult;
+    public record DeleteProductResult(bool IsSuccess) : DeleteProductCommandResult;
+    public record DeleteProductNotFound : DeleteProductCommandResult;
 
     public class DeleteProductCommandValidator : AbstractValidator<DeleteProductCommand>
     {
@@ -16,10 +18,14 @@ namespace Catalog.API.Products.DeleteProduct
         }
     }
 
-    public class DeleteProductCommandHandler(IDocumentSession session) : ICommandHandler<DeleteProductCommand, DeleteProductResult>
+    public class DeleteProductCommandHandler(IDocumentSession session)
     {
-        public async Task<DeleteProductResult> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
+        public async Task<DeleteProductCommandResult> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
         {
+            var product = await session.LoadAsync<Product>(request.ProductId, cancellationToken);
+            if (product is null)
+                return new DeleteProductNotFound();
+
             session.Delete<Product>(request.ProductId);
             await session.SaveChangesAsync(cancellationToken);
 

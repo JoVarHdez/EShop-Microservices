@@ -1,6 +1,5 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
+using Wolverine;
 
 namespace Catalog.API.Products.CreateProduct
 {
@@ -14,15 +13,15 @@ namespace Catalog.API.Products.CreateProduct
 
     public record CreateProductResponse(Guid Id);
 
-    public class CreateProductEndpoint : ICarterModule
+    public static class CreateProductEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapCreateProductEndpoint(this RouteGroupBuilder group)
         {
-            app.MapPost("/products", async (CreateProductRequest request, ISender sender) =>
+            group.MapPost("/", async (CreateProductRequest request, IMessageBus bus) =>
             {
                 var command = request.Adapt<CreateProductCommand>();
 
-                var result = await sender.Send(command);
+                var result = await bus.InvokeAsync<CreateProductResult>(command);
 
                 var response = result.Adapt<CreateProductResponse>();
 
@@ -33,6 +32,8 @@ namespace Catalog.API.Products.CreateProduct
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithSummary("Creates a new product")
                 .WithDescription("Creates a new product with the specified details");
+
+            return group;
         }
     }
 }

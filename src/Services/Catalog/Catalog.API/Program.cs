@@ -1,29 +1,25 @@
-using BuildingBlocks.Exceptions.Handler;
-using Carter;
+using Catalog.API.Exceptions.Handler;
 using Catalog.API.Data;
+using Catalog.API.Products;
 using FluentValidation;
 using HealthChecks.UI.Client;
 using Marten;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Wolverine;
+using Wolverine.FluentValidation;
+using Wolverine.Marten;
 
 var builder = WebApplication.CreateBuilder(args);
 var assembly = typeof(Program).Assembly;
 
 // Add services to the container.
-builder.Services.AddMediatR(config =>
-{
-    config.RegisterServicesFromAssembly(assembly);
-    config.AddOpenBehavior(typeof(BuildingBlocks.Behaviors.ValidationBehavior<,>));
-    config.AddOpenBehavior(typeof(BuildingBlocks.Behaviors.LoggingBehavior<,>));
-});
-
 builder.Services.AddValidatorsFromAssembly(assembly);
 
-builder.Services.AddCarter();
 builder.Services.AddMarten(config =>
 {
     config.Connection(builder.Configuration.GetConnectionString("Database")!);
-}).UseLightweightSessions();
+}).UseLightweightSessions()
+.IntegrateWithWolverine();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -35,10 +31,12 @@ builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
 
+builder.Host.UseWolverine(opts => opts.UseFluentValidation(RegistrationBehavior.ExplicitRegistration));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.MapCarter();
+app.MapProductsEndpoints();
 
 app.UseExceptionHandler(options => 
 { 

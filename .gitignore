@@ -483,3 +483,11 @@ $RECYCLE.BIN/
 
 # C# dev kit cache files
 *.lscache
+
+# Ignore the main SQLite database
+discountdb
+
+# Ignore SQLite internal journal and WAL files
+discountdb-shm
+discountdb-wal
+discountdb-journal

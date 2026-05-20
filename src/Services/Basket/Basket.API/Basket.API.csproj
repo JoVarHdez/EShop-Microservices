@@ -26,7 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Protos\" />
     <Folder Include="GrpcServices\" />
     <Folder Include="DTOs\" />
   </ItemGroup>

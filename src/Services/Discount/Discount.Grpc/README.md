@@ -107,6 +107,9 @@ Container ports: `8080` (HTTP) / `8081` (HTTPS).
 
 SQLite is used for persistence. The database file (`discountdb`) is created automatically on startup via EF Core migrations.
 
+> [!WARNING]
+> **Container data loss risk.** The connection string `Data Source=discountdb` resolves to the current working directory inside the container. The `discountdb` file lives in the container's writable layer and is **permanently lost when the container is removed or replaced**. This is acceptable for local development and course exercises, but is not suitable for any persistent workload. See [Database Alternatives](#database-alternatives) below.
+
 **Seed data** (applied on first run):
 
 | Id | ProductName | Description | Amount |
@@ -118,6 +121,63 @@ SQLite is used for persistence. The database file (`discountdb`) is created auto
 
 ```bash
 dotnet ef database update
+```
+
+### Database Alternatives
+
+When moving beyond local development, replace SQLite with a database that supports persistent, shared storage in a containerized environment. The EF Core model and migrations require minimal changes for each option.
+
+#### PostgreSQL *(recommended)*
+
+The strongest choice for this microservices stack. Catalog.API already uses PostgreSQL (via Marten/Marten), so the infrastructure is already present in the Docker Compose environment. PostgreSQL supports concurrent access, is fully ACID-compliant, and has excellent .NET tooling.
+
+| Item | Value |
+|---|---|
+| EF Core provider | `Npgsql.EntityFrameworkCore.PostgreSQL` |
+| Connection string | `Host=postgres;Database=discountdb;Username=postgres;Password=...` |
+| Docker image | `postgres:16-alpine` |
+
+```bash
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+```
+
+In `Program.cs`, replace:
+```csharp
+options.UseSqlite(builder.Configuration.GetConnectionString("Database"))
+```
+with:
+```csharp
+options.UseNpgsql(builder.Configuration.GetConnectionString("Database"))
+```
+
+Then regenerate migrations: `dotnet ef migrations add InitialCreate --context DiscountContext`
+
+#### SQL Server
+
+A natural fit if the team is already operating SQL Server infrastructure or running in an Azure-hosted environment (Azure SQL).
+
+| Item | Value |
+|---|---|
+| EF Core provider | `Microsoft.EntityFrameworkCore.SqlServer` |
+| Connection string | `Server=sqlserver;Database=DiscountDb;User Id=sa;Password=...` |
+| Docker image | `mcr.microsoft.com/mssql/server:2022-latest` |
+
+```bash
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+```
+
+#### MySQL / MariaDB
+
+A widely deployed open-source option with strong container support.
+
+| Item | Value |
+|---|---|
+| EF Core provider | `Pomelo.EntityFrameworkCore.MySql` |
+| Connection string | `Server=mysql;Database=discountdb;User=root;Password=...` |
+| Docker image | `mysql:8.4` or `mariadb:11` |
+
+```bash
+dotnet add package Pomelo.EntityFrameworkCore.MySql
 ```
 
 ## Dependencies

@@ -70,7 +70,7 @@ Use kebab-case for the filename (e.g., `employee-project-assignment.md`)
 
 **Explicit scope boundaries.** The "Out of Scope" section is as important as what IS in scope. It prevents feature creep.
 
-**Human decisions only.** Open Questions should never be technical ("What database should we use?"). They should be business decisions ("Should admins be able to delete other users' projects?").
+**Human decisions only.** Open Questions should never be technical ("What database should we use?"). They should be business decisions ("Should admins be able to delete other users' projects?"). Always use a multi-choice format for open questions to make it easier for humans to answer.
 
 ## Anti-Patterns to Avoid
 

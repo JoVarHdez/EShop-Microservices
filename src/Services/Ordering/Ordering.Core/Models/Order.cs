@@ -18,7 +18,12 @@ namespace Ordering.Core.Models
         public Payment Payment { get; private set; } = default!;
         public OrderStatus Status { get; private set; } = OrderStatus.Pending;
 
-        public decimal TotalAmount => OrderItems.Sum(item => item.Price * item.Quantity);
+        public decimal TotalAmount
+        {
+            get => OrderItems.Sum(item => item.Price * item.Quantity);
+            // Necessary for EF Core migrations
+            private set { }
+        }
 
         public static Order Create(OrderId orderId, CustomerId customerId, OrderName orderName, Address shippingAddress, Address billingAddress, Payment payment)
         {

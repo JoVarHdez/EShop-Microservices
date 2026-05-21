@@ -8,6 +8,9 @@ services:
   distributedcache:
     image: redis
 
+  orderingdb:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+
   catalog.api:
     image: ${DOCKER_REGISTRY-}catalogapi
     build:

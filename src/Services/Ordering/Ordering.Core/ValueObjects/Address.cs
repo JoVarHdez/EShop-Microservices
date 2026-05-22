@@ -4,7 +4,7 @@
     {
         public string FirstName { get; } = default!;
         public string LastName { get; } = default!;
-        public string? EmailAdress { get; } = default!;
+        public string? EmailAddress { get; } = default!;
         public string AddressLine { get; } = default!;
         public string Country { get; } = default!;
         public string State { get; } = default!;
@@ -18,7 +18,7 @@
         {
             FirstName = firstName;
             LastName = lastName;
-            EmailAdress = emailAdress;
+            EmailAddress = emailAdress;
             AddressLine = addressLine;
             Country = country;
             State = state;

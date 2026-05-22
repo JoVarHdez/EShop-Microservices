@@ -1,6 +1,6 @@
 # BuildingBlocks
 
-A shared class library providing cross-cutting infrastructure for the eShop microservices solution. It contains reusable CQRS abstractions, MediatR pipeline behaviors, and standardized exception handling.
+A shared class library providing cross-cutting infrastructure for the eShop microservices solution. It contains reusable CQRS abstractions, MediatR pipeline behaviors, standardized exception handling, and pagination utilities.
 
 ## Target Framework
 
@@ -15,8 +15,8 @@ A shared class library providing cross-cutting infrastructure for the eShop micr
 | FluentValidation.AspNetCore | 11.3.1 | ASP.NET Core integration |
 | FluentValidation.DependencyInjectionExtensions | 12.1.1 | DI registration helpers |
 | Mapster | 10.0.7 | Object mapping |
-| WolverineFx | 5.39.1 | Messaging and command bus |
-| WolverineFx.Marten | 5.39.1 | Wolverine + Marten integration |
+| `WolverineFx` | 5.39.1 | Wolverine messaging and command bus (used by services migrating away from MediatR) |
+| `WolverineFx.Marten` | 5.39.1 | Wolverine + Marten integration for event-sourced handlers |
 
 ---
 
@@ -32,12 +32,15 @@ BuildingBlocks/
 ├── Behaviors/                   # MediatR pipeline behaviors
 │   ├── LoggingBehavior.cs
 │   └── ValidationBehavior.cs
-└── Exceptions/                  # Domain exceptions and handler
-    ├── BadRequestException.cs
-    ├── InternalServerException.cs
-    ├── NotFoundException.cs
-    └── Handler/
-        └── CustomExceptionHandler.cs
+├── Exceptions/                  # Domain exceptions and handler
+│   ├── BadRequestException.cs
+│   ├── InternalServerException.cs
+│   ├── NotFoundException.cs
+│   └── Handler/
+│       └── CustomExceptionHandler.cs
+└── Pagination/                  # Pagination helpers
+    ├── PaginationRequest.cs
+    └── PaginatedResult.cs
 ```
 
 ---
@@ -105,6 +108,58 @@ Runs all registered `IValidator<TRequest>` instances before the handler is invok
 
 ---
 
+## Pagination
+
+Two lightweight types for applying consistent paging across all query endpoints.
+
+### PaginationRequest
+
+A record passed in as part of a query to specify the desired page.
+
+```csharp
+public record PaginationRequest(int PageIndex = 0, int PageSize = 10);
+```
+
+| Property | Default | Description |
+|---|---|---|
+| `PageIndex` | `0` | Zero-based page index |
+| `PageSize` | `10` | Number of items per page |
+
+### PaginatedResult\<TEntity\>
+
+The standard envelope returned by paginated query handlers.
+
+```csharp
+public class PaginatedResult<TEntity>(int pageIndex, int pageSize, long count, IEnumerable<TEntity> data)
+    where TEntity : class
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `PageIndex` | `int` | Current page index |
+| `PageSize` | `int` | Page size used for this result |
+| `Count` | `long` | Total number of matching records |
+| `Data` | `IEnumerable<TEntity>` | Items for the current page |
+
+**Usage example:**
+
+```csharp
+public record GetProductsQuery(PaginationRequest Pagination) : IQuery<PaginatedResult<ProductDto>>;
+
+public class GetProductsHandler : IQueryHandler<GetProductsQuery, PaginatedResult<ProductDto>>
+{
+    public async Task<PaginatedResult<ProductDto>> Handle(GetProductsQuery query, CancellationToken ct)
+    {
+        var (pageIndex, pageSize) = query.Pagination;
+        var total = await _repo.CountAsync(ct);
+        var items = await _repo.GetPageAsync(pageIndex, pageSize, ct);
+        return new PaginatedResult<ProductDto>(pageIndex, pageSize, total, items);
+    }
+}
+```
+
+---
+
 ## Exception Handling
 
 ### Exception Types
@@ -112,8 +167,10 @@ Runs all registered `IValidator<TRequest>` instances before the handler is invok
 | Exception | HTTP Status | Usage |
 |---|---|---|
 | `BadRequestException` | 400 | Invalid input that doesn't pass business rules |
+| `FluentValidation.ValidationException` | 400 | Validation failures raised by `ValidationBehavior` |
 | `NotFoundException` | 404 | Entity not found by ID or criteria |
 | `InternalServerException` | 500 | Unexpected server-side failures |
+| *(any other)* | 500 | Unhandled exceptions — caught as last resort |
 
 ```csharp
 // NotFoundException
@@ -134,7 +191,7 @@ Implements `IExceptionHandler` (ASP.NET Core 8+ problem details middleware). Map
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-app.UseExceptionHandler();
+app.UseExceptionHandler(options => { });
 ```
 
 **Example error response:**

@@ -138,7 +138,11 @@ cd src/Services/Catalog/Catalog.API
 dotnet run
 ```
 
-The API will be available at `https://localhost:5001` (or the port configured in `Properties/launchSettings.json`).
+The API will be available at:
+- HTTP: `http://localhost:5000`
+- HTTPS: `https://localhost:5050`
+
+(Profiles and ports are configured in `Properties/launchSettings.json`.)
 
 ## Architecture Notes
 

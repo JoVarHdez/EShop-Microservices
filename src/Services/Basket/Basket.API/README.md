@@ -46,17 +46,20 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 
 ## Dependencies
 
-| Package | Purpose |
-|---|---|
-| [Carter](https://github.com/CarterCommunity/Carter) | Minimal API endpoint modules |
-| [MediatR](https://github.com/jbogard/MediatR) | CQRS mediator |
-| [Marten](https://martendb.io/) | PostgreSQL document store / ORM |
-| [Scrutor](https://github.com/khellang/Scrutor) | Decorator registration for `IBasketRepository` |
-| [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/) | Distributed cache (Redis) |
-| [FluentValidation](https://fluentvalidation.net/) | Request validation |
-| [Grpc.AspNetCore](https://grpc.io/) | gRPC client for Discount service |
-| [WolverineFx](https://wolverine.netlify.app/) | Messaging and saga support |
-| BuildingBlocks | Shared CQRS interfaces, behaviors, and exception handler |
+| Package | Source | Purpose |
+|---|---|---|
+| [Carter](https://github.com/CarterCommunity/Carter) | Basket.API | Minimal API endpoint modules (`ICarterModule`) |
+| [MediatR](https://github.com/jbogard/MediatR) | BuildingBlocks | CQRS mediator — `ISender`, `IRequest` |
+| [Marten](https://martendb.io/) | Basket.API | PostgreSQL document store / ORM |
+| [Mapster](https://github.com/MapsterMapper/Mapster) | BuildingBlocks | Object mapping (`.Adapt<>()`) in endpoints |
+| [Scrutor](https://github.com/khellang/Scrutor) | Basket.API | Decorator registration for `IBasketRepository` |
+| [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/) | Basket.API | Distributed cache (`IDistributedCache`) |
+| [FluentValidation](https://fluentvalidation.net/) | BuildingBlocks | Request validation via MediatR pipeline |
+| [Grpc.AspNetCore](https://grpc.io/) | Basket.API | gRPC client for Discount service |
+| [WolverineFx](https://wolverine.netlify.app/) | Basket.API / BuildingBlocks | Included for planned migration from MediatR |
+| [WolverineFx.FluentValidation](https://wolverine.netlify.app/) | Basket.API | Wolverine validation middleware (planned) |
+| [WolverineFx.Marten](https://wolverine.netlify.app/) | Basket.API | Wolverine–Marten session integration (planned) |
+| BuildingBlocks | Project ref | Shared CQRS interfaces, behaviors, and exception handler |
 
 ## Configuration
 
@@ -66,7 +69,7 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 | `ConnectionStrings:Redis` | Redis connection string |
 | `GrpcSettings:DiscountUrl` | URL for the Discount gRPC service |
 
-**Example `appsettings.json`:**
+**Local (`appsettings.json`):**
 
 ```json
 {
@@ -78,6 +81,14 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
     "DiscountUrl": "https://localhost:5052"
   }
 }
+```
+
+**Docker (`docker-compose.override.yml`):**
+
+```yaml
+ConnectionStrings__Database: Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=password;
+ConnectionStrings__Redis: distributedcache:6379
+GrpcSettings__DiscountUrl: https://discount.grpc:8081
 ```
 
 ## Running Locally
@@ -100,7 +111,13 @@ cd src/Services/Basket/Basket.API
 dotnet run
 ```
 
-The API will be available at `https://localhost:5001` (or as configured in `launchSettings.json`).
+| Profile | URL |
+|---|---|
+| `http` | http://localhost:5001 |
+| `https` | https://localhost:5051 and http://localhost:5001 |
+| Docker | http://localhost:6001 (HTTP) / https://localhost:6061 (HTTPS) |
+
+See `Properties/launchSettings.json` for full profile details.
 
 ## Project Structure
 

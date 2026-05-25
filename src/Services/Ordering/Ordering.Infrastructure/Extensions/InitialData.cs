@@ -13,8 +13,8 @@ namespace Ordering.Infrastructure.Extensions
 
         public static readonly IEnumerable<Product> Products =
         [
-            Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000011")), "Laptop", 999.99m),
-            Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000012")), "Smartphone", 499.99m),
+            Product.Create(ProductId.Of(new Guid("5334c996-8457-4cf0-815c-ed2b77c4ff61")), "IPhone X", 500),
+            Product.Create(ProductId.Of(new Guid("c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914")), "Samsung 10", 500),
             Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000013")), "Headphones", 199.99m),
             Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000014")), "Smartwatch", 299.99m),
         ];
@@ -29,7 +29,7 @@ namespace Ordering.Infrastructure.Extensions
                          Addresses.First(),
                          Addresses.First(),
                          Payments.First());
-                order1.Add(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000011")), 1, 999.99m);
+                order1.Add(ProductId.Of(new Guid("5334c996-8457-4cf0-815c-ed2b77c4ff61")), 1, 500);
                 order1.Add(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000013")), 2, 199.99m);
 
                 var order2 = Order.Create(OrderId.Of(Guid.NewGuid()),
@@ -39,7 +39,7 @@ namespace Ordering.Infrastructure.Extensions
                          Addresses.Last(),
                          Payments.Last());
 
-                order2.Add(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000012")), 1, 499.99m);
+                order2.Add(ProductId.Of(new Guid("c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914")), 1, 500);
                 order2.Add(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000014")), 2, 299.99m);
 
                 return [order1, order2];

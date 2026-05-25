@@ -25,7 +25,7 @@ namespace Ordering.Application.Orders.Commands.UpdateOrder
             dbContext.Orders.Update(order);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new UpdateOrderResult(order.Id.Value);
+            return new UpdateOrderResult(true);
         }
 
         private static void UpdateOrderWithNewValues(Order order, OrderDto orderDto)

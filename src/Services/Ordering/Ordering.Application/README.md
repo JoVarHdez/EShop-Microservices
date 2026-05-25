@@ -7,6 +7,7 @@ The application layer of the Ordering microservice. Implements use cases as CQRS
 - .NET 10.0
 - `Microsoft.EntityFrameworkCore` 10.0.8 (abstractions only — no provider)
 - `BuildingBlocks` (project reference — CQRS markers, pipeline behaviors, pagination)
+- `BuildingBlocks.Messaging` (project reference — MassTransit integration, `BasketCheckoutEvent`)
 - `Ordering.Core` (project reference — domain models, value objects, events)
 
 ## Project Structure
@@ -40,13 +41,16 @@ Ordering.Application/
 Call `AddApplicationServices` from the host project:
 
 ```csharp
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 ```
 
-This registers MediatR, scanning the assembly for all handlers, and adds two open generic pipeline behaviors in order:
+This registers:
 
-1. `ValidationBehavior<,>` — runs FluentValidation validators before the handler
-2. `LoggingBehavior<,>` — logs request/response details around the handler
+1. MediatR, scanning the assembly for all handlers, with two open generic pipeline behaviors:
+   - `ValidationBehavior<,>` — runs FluentValidation validators before the handler
+   - `LoggingBehavior<,>` — logs request/response details around the handler
+2. `AddFeatureManagement()` — ASP.NET Core Feature Management (reads `FeatureManagement` config section)
+3. `AddMessageBroker(configuration, assembly)` — MassTransit/RabbitMQ consumer registration, scanning the assembly for `IConsumer<T>` implementations
 
 ## Persistence Abstraction
 
@@ -74,7 +78,12 @@ All DTOs are immutable C# `record` types used as the public contract between the
 | `AddressDto` | `FirstName`, `LastName`, `EmailAddress`, `AddressLine`, `Country`, `State`, `ZipCode` |
 | `PaymentDto` | `CardName`, `CardNumber`, `Expiration`, `Cvv`, `PaymentMethod` |
 
-`OrderExtensions.ToOrderDtoList()` provides the canonical `IEnumerable<Order>` → `IEnumerable<OrderDto>` projection used by all query handlers.
+`OrderExtensions` provides two projection helpers backed by a shared private `DtoFromOrder(Order)` method:
+
+| Method | Signature | Used by |
+|---|---|---|
+| `ToOrderDtoList()` | `IEnumerable<Order>` → `IEnumerable<OrderDto>` | All query handlers |
+| `ToOrderDto()` | `Order` → `OrderDto` | `OrderCreatedEventHandler` (integration event) |
 
 ## Commands
 
@@ -90,7 +99,7 @@ All DTOs are immutable C# `record` types used as the public contract between the
 | | |
 |---|---|
 | **Input** | `OrderDto Order` |
-| **Output** | `UpdateOrderResult(Guid Id)` |
+| **Output** | `UpdateOrderResult(bool IsSuccess)` |
 | **Validation** | `Order.Id` not empty · `CustomerId` not null · `OrderName` not empty |
 | **Handler** | Loads order by `OrderId`, throws `OrderNotFoundException` if missing, calls `Order.Update(...)`, persists |
 
@@ -133,14 +142,14 @@ Registered automatically by MediatR. Invoked by `DispatchDomainEventsInterceptor
 
 | Handler | Event | Current Behaviour |
 |---|---|---|
-| `OrderCreatedEventHandler` | `OrderCreatedEvent` | Logs order ID at Information level |
+| `OrderCreatedEventHandler` | `OrderCreatedEvent` | Logs order ID; if the `OrderFullfilment` feature flag is enabled, maps the order to `OrderDto` via `ToOrderDto()` and publishes it as an integration event through MassTransit `IPublishEndpoint` |
 | `OrderUpdatedEventHandler` | `OrderUpdatedEvent` | Logs event type name at Information level |
 
 ### Integration Event Handlers
 
-| Handler | Status |
-|---|---|
-| `BasketCheckoutEventHandler` | Placeholder — not yet implemented |
+| Handler | Consumer type | Behaviour |
+|---|---|---|
+| `BasketCheckoutEventHandler` | `IConsumer<BasketCheckoutEvent>` | Receives a `BasketCheckoutEvent` from the message broker; maps it to a `CreateOrderCommand` (with a fixed two-item order) and sends it via MediatR `ISender` |
 
 ## Exceptions
 

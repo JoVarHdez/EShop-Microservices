@@ -14,7 +14,7 @@ namespace Ordering.Infrastructure.Extensions
         public static readonly IEnumerable<Product> Products =
         [
             Product.Create(ProductId.Of(new Guid("5334c996-8457-4cf0-815c-ed2b77c4ff61")), "IPhone X", 500),
-            Product.Create(ProductId.Of(new Guid("c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914")), "Samsung 10", 500),
+            Product.Create(ProductId.Of(new Guid("c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914")), "Samsung 10", 400),
             Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000013")), "Headphones", 199.99m),
             Product.Create(ProductId.Of(new Guid("00000000-0000-0000-0000-000000000014")), "Smartwatch", 299.99m),
         ];

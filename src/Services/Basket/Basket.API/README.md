@@ -5,6 +5,7 @@ A microservice responsible for managing shopping cart (basket) operations in the
 ## Features
 
 - **CRUD operations** for shopping carts per user
+- **Checkout** — publishes a `BasketCheckoutEvent` to RabbitMQ via MassTransit, then removes the basket
 - **Discount integration** via gRPC — deducts discounts from item prices at storage time
 - **Redis caching** — decorator pattern applied transparently over the primary data store
 - **PostgreSQL persistence** via Marten (document store)
@@ -21,7 +22,7 @@ Basket/
 ├── GetBasket/        # GET /basket/{userName}
 ├── StoreBasket/      # POST /basket
 ├── DeleteBasket/     # DELETE /basket/{userName}
-└── CheckoutBasket/   # (in progress)
+└── CheckoutBasket/   # POST /basket/checkout
 ```
 
 Each slice contains an **Endpoint** (Carter `ICarterModule`) and a **Handler** (MediatR command/query).
@@ -42,6 +43,7 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 | `GET` | `/basket/{userName}` | Retrieve the shopping cart for a user |
 | `POST` | `/basket` | Create or update the shopping cart for a user |
 | `DELETE` | `/basket/{userName}` | Delete the shopping cart for a user |
+| `POST` | `/basket/checkout` | Publish a `BasketCheckoutEvent` and clear the basket |
 | `GET` | `/health` | Health check endpoint |
 
 ## Dependencies
@@ -56,10 +58,12 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 | [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/) | Basket.API | Distributed cache (`IDistributedCache`) |
 | [FluentValidation](https://fluentvalidation.net/) | BuildingBlocks | Request validation via MediatR pipeline |
 | [Grpc.AspNetCore](https://grpc.io/) | Basket.API | gRPC client for Discount service |
+| [MassTransit.RabbitMQ](https://masstransit.io/) | BuildingBlocks.Messaging | RabbitMQ transport — publishes `BasketCheckoutEvent` |
 | [WolverineFx](https://wolverine.netlify.app/) | Basket.API / BuildingBlocks | Included for planned migration from MediatR |
 | [WolverineFx.FluentValidation](https://wolverine.netlify.app/) | Basket.API | Wolverine validation middleware (planned) |
 | [WolverineFx.Marten](https://wolverine.netlify.app/) | Basket.API | Wolverine–Marten session integration (planned) |
 | BuildingBlocks | Project ref | Shared CQRS interfaces, behaviors, and exception handler |
+| BuildingBlocks.Messaging | Project ref | `AddMessageBroker` helper + `BasketCheckoutEvent` definition |
 
 ## Configuration
 
@@ -68,6 +72,9 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 | `ConnectionStrings:Database` | PostgreSQL connection string |
 | `ConnectionStrings:Redis` | Redis connection string |
 | `GrpcSettings:DiscountUrl` | URL for the Discount gRPC service |
+| `MessageBroker:Host` | RabbitMQ AMQP URI |
+| `MessageBroker:Username` | RabbitMQ username |
+| `MessageBroker:Password` | RabbitMQ password |
 
 **Local (`appsettings.json`):**
 
@@ -79,6 +86,11 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
   },
   "GrpcSettings": {
     "DiscountUrl": "https://localhost:5052"
+  },
+  "MessageBroker": {
+    "Host": "amqp://localhost:5672",
+    "Username": "guest",
+    "Password": "guest"
   }
 }
 ```
@@ -89,6 +101,9 @@ The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern
 ConnectionStrings__Database: Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=password;
 ConnectionStrings__Redis: distributedcache:6379
 GrpcSettings__DiscountUrl: https://discount.grpc:8081
+MessageBroker__Host: amqp://ecommerce-mq:5672
+MessageBroker__Username: guest
+MessageBroker__Password: guest
 ```
 
 ## Running Locally
@@ -103,6 +118,8 @@ GrpcSettings__DiscountUrl: https://discount.grpc:8081
 ```bash
 docker-compose up -d
 ```
+
+This starts PostgreSQL (`basketdb`), Redis (`distributedcache`), Discount gRPC, and **RabbitMQ** (`messagebroker`). The RabbitMQ management UI is available at `http://localhost:15672` (guest/guest).
 
 ### Run the service
 
@@ -119,6 +136,23 @@ dotnet run
 
 See `Properties/launchSettings.json` for full profile details.
 
+## Async Messaging
+
+Basket.API acts as a **publisher only** — it has no message consumers.
+
+| Event | Trigger | Destination |
+|---|---|---|
+| `BasketCheckoutEvent` | `POST /basket/checkout` | RabbitMQ exchange → consumed by `Ordering.API` |
+
+### Checkout flow
+1. Validate `BasketCheckoutDto` (UserName required)
+2. Load the existing basket to calculate `TotalPrice`
+3. Map `BasketCheckoutDto` → `BasketCheckoutEvent` and set `TotalPrice`
+4. Publish the event via MassTransit `IPublishEndpoint`
+5. Delete the basket
+
+MassTransit is registered with `AddMessageBroker(configuration)` (no assembly argument — no consumers to scan).
+
 ## Project Structure
 
 ```
@@ -132,6 +166,8 @@ Basket.API/
 │   ├── IBasketRepository.cs
 │   ├── BasketRepository.cs
 │   └── CachedBasketRepository.cs
+├── DTOs/                     # Data transfer objects
+│   └── BasketCheckoutDto.cs
 ├── Models/                   # Domain models
 │   ├── ShoppingCart.cs
 │   └── ShoppingCartItem.cs

@@ -38,6 +38,7 @@ The extension reads `ConnectionStrings:Database` from `IConfiguration` and regis
 1. `AuditableEntityInterceptor` (scoped `ISaveChangesInterceptor`)
 2. `DispatchDomainEventsInterceptor` (scoped `ISaveChangesInterceptor`)
 3. `ApplicationDbContext` with SQL Server provider and both interceptors injected via the DI provider
+4. `IApplicationDbContext` → `ApplicationDbContext` (scoped) — the abstraction used by the application layer
 
 ## ApplicationDbContext
 
@@ -143,6 +144,13 @@ Orders       (Id, CustomerId→Customers, OrderName, Status,
 OrderItems   (Id, OrderId→Orders, ProductId→Products,
               Quantity, Price, audit columns)
 ```
+
+**Migration history:**
+
+| Migration | Date | Change |
+|---|---|---|
+| `InitialCreate` | 2026-05-21 | Initial schema — all four tables |
+| `UpdateSomeProperty` | 2026-05-25 | Renames `BillingAddress_EmailAdress` → `BillingAddress_EmailAddress` and `ShippingAddress_EmailAdress` → `ShippingAddress_EmailAddress` in the Orders table (typo fix) |
 
 **Indexes created by the migration:**
 

@@ -1,6 +1,7 @@
 using Basket.API.Data;
 using Basket.API.Models;
 using BuildingBlocks.Exceptions.Handler;
+using BuildingBlocks.Messaging.MassTransit;
 using Carter;
 using FluentValidation;
 using HealthChecks.UI.Client;
@@ -57,6 +58,9 @@ builder.Services.AddGrpcClient<Discount.Grpc.DiscountProtoService.DiscountProtoS
         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
     };
 });
+
+// Don't need to add any assembly due to this is the publisher project, so no consumer (assembly) is needed.
+builder.Services.AddMessageBroker(builder.Configuration);
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 

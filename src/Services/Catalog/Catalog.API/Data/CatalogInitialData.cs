@@ -31,7 +31,7 @@ namespace Catalog.API.Data
                     Name = "Product 1",
                     Description = "Description for product 1",
                     Price = 10.99m,
-                    ImageUrl = "https://example.com/product1.jpg",
+                    ImageUrl = "product-1.png",
                     Categories = ["Category1", "Category2"]
                 },
                 new Product
@@ -40,7 +40,7 @@ namespace Catalog.API.Data
                     Name = "Product 2",
                     Description = "Description for product 2",
                     Price = 19.99m,
-                    ImageUrl = "https://example.com/product2.jpg",
+                    ImageUrl = "product-2.png",
                     Categories = ["Category2", "Category3"]
                 },
                 new Product
@@ -49,7 +49,7 @@ namespace Catalog.API.Data
                     Name = "Product 3",
                     Description = "Description for product 3",
                     Price = 5.99m,
-                    ImageUrl = "https://example.com/product3.jpg",
+                    ImageUrl = "product-3.png",
                     Categories = ["Category1"]
                 },
                 new Product
@@ -58,7 +58,7 @@ namespace Catalog.API.Data
                     Name = "Product 4",
                     Description = "Description for product 4",
                     Price = 15.49m,
-                    ImageUrl = "https://example.com/product4.jpg",
+                    ImageUrl = "product-4.png",
                     Categories = ["Category3"]
                 },
                 new Product
@@ -67,7 +67,7 @@ namespace Catalog.API.Data
                     Name = "Product 5",
                     Description = "Description for product 5",
                     Price = 8.75m,
-                    ImageUrl = "https://example.com/product5.jpg",
+                    ImageUrl = "product-5.png",
                     Categories = ["Category1", "Category2"]
                 },
                 new Product
@@ -76,7 +76,7 @@ namespace Catalog.API.Data
                     Name = "Product 6",
                     Description = "Description for product 6",
                     Price = 12.99m,
-                    ImageUrl = "https://example.com/product6.jpg",
+                    ImageUrl = "product-6.png",
                     Categories = ["Category2"]
                 },
                 new Product
@@ -85,7 +85,7 @@ namespace Catalog.API.Data
                     Name = "Product 7",
                     Description = "Description for product 7",
                     Price = 9.99m,
-                    ImageUrl = "https://example.com/product7.jpg",
+                    ImageUrl = "product-7.png",
                     Categories = ["Category1"]
                 }];
         }

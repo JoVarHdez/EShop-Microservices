@@ -1,29 +1,25 @@
 ﻿using Discount.Grpc.Data;
 using Discount.Grpc.Models;
+using Discount.Grpc.Repository;
 using Grpc.Core;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace Discount.Grpc.Services
 {
-    public class DiscountService(DiscountContext dbContext, ILogger<DiscountService> logger)
+    public class DiscountService(IDiscountRepository repository, ILogger<DiscountService> logger)
         : DiscountProtoService.DiscountProtoServiceBase
     {
         public override async Task<CouponModel> GetDiscount(GetDiscountRequest request, ServerCallContext context)
         {
-            var coupon = await  dbContext.Coupons.FirstOrDefaultAsync(c => c.ProductName == request.ProductName);
-
-            if (coupon == null) 
+            var coupon = await repository.GetDiscountAsync(request.ProductName, context.CancellationToken)
+                ?? new Coupon
             {
-                coupon = new Coupon
-                {
-                    ProductName = request.ProductName,
-                    Amount = 0,
-                    Description = "No discount available"
-                };
-            }
+                ProductName = request.ProductName,
+                Amount = 0,
+                Description = "No discount available"
+            };
 
-            logger.LogInformation("Discount is retrieved for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
+            logger.LogInformation("Discount retrieved for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
 
             var couponModel = coupon.Adapt<CouponModel>();
             return couponModel;
@@ -33,15 +29,16 @@ namespace Discount.Grpc.Services
         {
             var coupon = request.Coupon.Adapt<Coupon>();
 
-            if (coupon == null) 
+            try
             {
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid coupon data"));
+                await repository.CreateDiscountAsync(coupon, context.CancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new RpcException(new Status(StatusCode.AlreadyExists, ex.Message));
             }
 
-            dbContext.Coupons.Add(coupon);
-            await dbContext.SaveChangesAsync();
-
-            logger.LogInformation("Discount is successfully created for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
+            logger.LogInformation("Discount created for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
 
             var couponModel = coupon.Adapt<CouponModel>();
             return couponModel;
@@ -50,34 +47,29 @@ namespace Discount.Grpc.Services
         public override async Task<CouponModel> UpdateDiscount(UpdateDiscountRequest request, ServerCallContext context)
         {
             var coupon = request.Coupon.Adapt<Coupon>();
+            var updated = await repository.UpdateDiscountAsync(coupon, context.CancellationToken);
 
-            if (coupon == null)
+            if (updated is null)
             {
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid coupon data"));
+                throw new RpcException(new Status(StatusCode.NotFound, $"Discount for '{request.Coupon.ProductName}' not found."));
             }
 
-            dbContext.Coupons.Update(coupon);
-            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Discount updated for ProductName: {ProductName}, Amount: {Amount}", updated.ProductName, updated.Amount);
 
-            logger.LogInformation("Discount is successfully updated for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
-
-            var couponModel = coupon.Adapt<CouponModel>();
+            var couponModel = updated.Adapt<CouponModel>();
             return couponModel;
         }
 
         public override async Task<DeleteDiscountResponse> DeleteDiscount(DeleteDiscountRequest request, ServerCallContext context)
         {
-            var coupon = await dbContext.Coupons.FirstOrDefaultAsync(c => c.ProductName == request.ProductName);
+            var deleted = await repository.DeleteDiscountAsync(request.ProductName, context.CancellationToken);
 
-            if (coupon == null)
+            if (!deleted)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, $"Discount for ProductName: {request.ProductName} not found"));
             }
 
-            dbContext.Coupons.Remove(coupon);
-            await dbContext.SaveChangesAsync();
-
-            logger.LogInformation("Discount is successfully deleted for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
+            logger.LogInformation("Discount deleted for ProductName: {ProductName}", request.ProductName);
 
             return new DeleteDiscountResponse { Success = true };
         }

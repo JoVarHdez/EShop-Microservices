@@ -468,3 +468,32 @@ await app.RunAsync();
    | k | `GET /health` via HTTP | `200 Healthy` |
 
 4. **Basket.API integration**: Start both `discount.grpc` and `basket.api` via `docker-compose up`. `StoreBasket` for a product with a known discount must return a cart with the price correctly reduced.
+
+---
+
+## Build Reliability Note (2026-06-02)
+
+During local verification on Windows, `dotnet build` intermittently failed with:
+
+- `MSB3883` + `UnauthorizedAccessException` on `obj/Debug/net10.0/refint/Discount.Grpc.dll`
+
+### Applied fix
+
+Added `src/Directory.Build.props` with:
+
+- `<UseSharedCompilation>false</UseSharedCompilation>`
+- `<ProduceReferenceAssembly>false</ProduceReferenceAssembly>` for `Discount.Grpc` only
+
+This disables shared compiler-server reuse for projects under `src/` and bypasses `refint` output generation for `Discount.Grpc`, which eliminates the failing copy step.
+
+### Recommended local build command
+
+When reproducing the lock on a developer machine, use:
+
+`dotnet build C:\ws\MicroservicesProject\src\eshop-microservices.slnx -m:1 /nr:false /p:UseSharedCompilation=false -v:minimal`
+
+Notes:
+
+- `/nr:false` disables MSBuild node reuse.
+- `-m:1` constrains builds to a single worker process.
+- The command above succeeded after this change in the local environment.

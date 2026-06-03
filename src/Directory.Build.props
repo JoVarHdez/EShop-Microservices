@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <!-- Mitigates intermittent UnauthorizedAccessException on refint outputs by disabling shared compiler server reuse. -->
+    <UseSharedCompilation>false</UseSharedCompilation>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Discount.Grpc'">
+    <!-- Workaround for intermittent MSB3883 refint file copy lock on local Windows builds. -->
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+</Project>

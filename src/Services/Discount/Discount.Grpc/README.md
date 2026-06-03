@@ -40,13 +40,22 @@ Discount.Grpc/
 ├── Data/
 │   ├── DiscountContext.cs      # EF Core DbContext with seed data
 │   └── Extensions.cs           # Migration auto-apply helper
+├── Interceptors/
+│   └── ValidationInterceptor.cs # FluentValidation gRPC interceptor
 ├── Migrations/                 # EF Core migration files
 ├── Models/
 │   └── Coupon.cs               # Domain entity
+├── Repository/
+│   ├── DiscountRepository.cs   # Repository implementation (EF Core)
+│   └── IDiscountRepository.cs  # Repository abstraction
 ├── Protos/
 │   └── discount.proto          # Protobuf service definition
 ├── Services/
 │   └── DiscountService.cs      # gRPC service implementation
+├── Validators/
+│   ├── CreateDiscountRequestValidator.cs
+│   ├── GetDiscountRequestValidator.cs
+│   └── UpdateDiscountRequestValidator.cs
 ├── Program.cs
 └── appsettings.json
 ```
@@ -87,6 +96,25 @@ Default local URLs:
 | HTTPS | `https://localhost:5052` |
 
 > gRPC reflection is enabled in the `Development` environment, allowing tools like [grpcurl](https://github.com/fullstorydev/grpcurl) or [Postman](https://www.postman.com/) to introspect the service.
+
+Additional endpoint:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | EF Core DbContext health check |
+
+### Build Reliability (Windows)
+
+If you encounter intermittent `MSB3883` / `UnauthorizedAccessException` errors on:
+
+- `obj/Debug/net10.0/refint/Discount.Grpc.dll`
+
+the repo now includes a persistent fix in `src/Directory.Build.props`:
+
+- `UseSharedCompilation=false` (under `src/` projects)
+- `ProduceReferenceAssembly=false` for `Discount.Grpc` only
+
+This avoids the failing `refint` copy path in local Windows builds.
 
 ## Running with Docker
 
@@ -186,6 +214,8 @@ dotnet add package Pomelo.EntityFrameworkCore.MySql
 |---|---|---|
 | `Grpc.AspNetCore` | 2.80.0 | gRPC server |
 | `Grpc.AspNetCore.Server.Reflection` | 2.80.0 | gRPC reflection |
+| `FluentValidation.DependencyInjectionExtensions` | 11.11.0 | Validator registration from assembly |
 | `Mapster` | 10.0.7 | Object mapping (entity ↔ proto model) |
+| `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` | 10.0.8 | EF Core health checks |
 | `Microsoft.EntityFrameworkCore.Sqlite` | 10.0.8 | SQLite provider |
 | `Microsoft.EntityFrameworkCore.Tools` | 10.0.8 | EF Core CLI tooling |

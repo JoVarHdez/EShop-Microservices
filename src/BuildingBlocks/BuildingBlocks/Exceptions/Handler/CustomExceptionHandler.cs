@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Catalog.API.Exceptions.Handler
+namespace BuildingBlocks.Exceptions.Handler
 {
     public class CustomExceptionHandler : IExceptionHandler
     {

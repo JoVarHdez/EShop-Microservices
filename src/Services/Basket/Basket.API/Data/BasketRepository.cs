@@ -1,5 +1,4 @@
-﻿using Basket.API.Exceptions;
-using Basket.API.Models;
+﻿using Basket.API.Models;
 using Marten;
 
 namespace Basket.API.Data
@@ -13,11 +12,11 @@ namespace Basket.API.Data
             return true;
         }
 
-        public async Task<ShoppingCart> GetBasketAsync(string userName, CancellationToken cancellationToken = default)
+        public async Task<ShoppingCart?> GetBasketAsync(string userName, CancellationToken cancellationToken = default)
         {
             var basket = await session.LoadAsync<ShoppingCart>(userName, cancellationToken);
 
-            return basket is null ? throw new BasketNotFoundException(userName) : basket;
+            return basket;
         }
 
         public async Task<ShoppingCart> StoreBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default)

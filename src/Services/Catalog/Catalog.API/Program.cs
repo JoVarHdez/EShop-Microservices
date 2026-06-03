@@ -1,4 +1,4 @@
-using Catalog.API.Exceptions.Handler;
+using BuildingBlocks.Exceptions.Handler;
 using Catalog.API.Data;
 using Catalog.API.Products;
 using FluentValidation;

@@ -1,6 +1,5 @@
 ﻿using Basket.API.Data;
 using Basket.API.DTOs;
-using BuildingBlocks.CQRS;
 using BuildingBlocks.Messaging.Events;
 using FluentValidation;
 using Mapster;
@@ -8,7 +7,7 @@ using MassTransit;
 
 namespace Basket.API.Basket.CheckoutBasket
 {
-    public record CheckoutBasketCommand(BasketCheckoutDto BasketCheckoutDto) : ICommand<CheckoutBasketResult>;
+    public record CheckoutBasketCommand(BasketCheckoutDto BasketCheckoutDto);
     public record CheckoutBasketResult(bool IsSuccess);
 
     public class CheckoutBasketCommandValidator : AbstractValidator<CheckoutBasketCommand>
@@ -20,22 +19,22 @@ namespace Basket.API.Basket.CheckoutBasket
         }
     }
 
-    public class CheckoutBasketCommandHandler(IBasketRepository repository, IPublishEndpoint publishEndpoint) : ICommandHandler<CheckoutBasketCommand, CheckoutBasketResult>
+    public class CheckoutBasketCommandHandler(IBasketRepository repository, IPublishEndpoint publishEndpoint)
     {
-        public async Task<CheckoutBasketResult> Handle(CheckoutBasketCommand request, CancellationToken cancellationToken)
+        public async Task<CheckoutBasketResult> Handle(CheckoutBasketCommand command, CancellationToken cancellationToken)
         {
-            var basket = await repository.GetBasketAsync(request.BasketCheckoutDto.UserName, cancellationToken);
+            var basket = await repository.GetBasketAsync(command.BasketCheckoutDto.UserName, cancellationToken);
             if (basket == null)
             {
                 return new CheckoutBasketResult(false);
             }
 
-            var eventMessage = request.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
+            var eventMessage = command.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
             eventMessage.TotalPrice = basket.TotalPrice;
 
             await publishEndpoint.Publish(eventMessage, cancellationToken);
 
-            await repository.DeleteBasketAsync(request.BasketCheckoutDto.UserName, cancellationToken);
+            await repository.DeleteBasketAsync(command.BasketCheckoutDto.UserName, cancellationToken);
 
             return new CheckoutBasketResult(true);
         }

@@ -1,17 +1,17 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
+using Wolverine;
 
 namespace Basket.API.Basket.DeleteBasket
 {
     public record DeleteBasketResponse(bool Success);
-    public class DeleteBasketEndpoints : ICarterModule
+
+    public static class DeleteBasketEndpoints
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapDeleteBasketEndpoint(this RouteGroupBuilder group)
         {
-            app.MapDelete("/basket/{userName}", async (string userName, ISender sender) =>
+            group.MapDelete("/{userName}", async (string userName, IMessageBus bus) =>
             {
-                var result = await sender.Send(new DeleteBasketCommand(userName));
+                var result = await bus.InvokeAsync<DeleteBasketResult>(new DeleteBasketCommand(userName));
 
                 var response = result.Adapt<DeleteBasketResponse>();
 
@@ -20,9 +20,10 @@ namespace Basket.API.Basket.DeleteBasket
                 .WithName("DeleteBasket")
                 .Produces<DeleteBasketResponse>(StatusCodes.Status200OK)
                 .ProducesProblem(StatusCodes.Status400BadRequest)
-                .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Deletes a shopping basket for a user.")
                 .WithDescription("Deletes a shopping basket for a user.");
+
+            return group;
         }
     }
 }

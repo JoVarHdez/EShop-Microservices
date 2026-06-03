@@ -8,9 +8,9 @@ A microservice responsible for managing shopping cart (basket) operations in the
 - **Checkout** — publishes a `BasketCheckoutEvent` to RabbitMQ via MassTransit, then removes the basket
 - **Discount integration** via gRPC — deducts discounts from item prices at storage time
 - **Redis caching** — decorator pattern applied transparently over the primary data store
-- **PostgreSQL persistence** via Marten (document store)
-- **CQRS** with MediatR and strongly-typed commands/queries
-- **FluentValidation** for input validation
+- **PostgreSQL persistence** via Marten (document store) integrated with Wolverine
+- **In-process messaging** via Wolverine (`IMessageBus.InvokeAsync<T>()`) for write-side dispatch
+- **FluentValidation** via Wolverine's `UseFluentValidation` middleware
 - **Health checks** for PostgreSQL and Redis
 
 ## Architecture
@@ -19,50 +19,56 @@ The service follows a vertical slice architecture. Each feature lives in its own
 
 ```
 Basket/
-├── GetBasket/        # GET /basket/{userName}
-├── StoreBasket/      # POST /basket
-├── DeleteBasket/     # DELETE /basket/{userName}
-└── CheckoutBasket/   # POST /basket/checkout
+├── BasketEndpoints.cs  # MapGroup("/basket") aggregator — registers all routes
+├── GetBasket/          # GET /basket/{userName}
+├── StoreBasket/        # POST /basket
+├── DeleteBasket/       # DELETE /basket/{userName}
+└── CheckoutBasket/     # POST /basket/checkout
 ```
 
-Each slice contains an **Endpoint** (Carter `ICarterModule`) and a **Handler** (MediatR command/query).
+Each slice contains a **static endpoint class** (native `RouteGroupBuilder` extension method) and a **handler class** (Wolverine convention-based `Handle` method). Endpoints are all registered under the `/basket` `MapGroup` via `BasketEndpoints.MapBasketEndpoints()`.
 
 ### Data Layer
 
 | Class | Description |
 |---|---|
-| `BasketRepository` | Primary repository — reads/writes `ShoppingCart` documents to PostgreSQL via Marten |
-| `CachedBasketRepository` | Decorator over `BasketRepository` — transparently caches results in Redis using `IDistributedCache` |
+| `BasketRepository` | Primary repository — reads/writes `ShoppingCart` documents to PostgreSQL via Marten. `GetBasketAsync` returns `ShoppingCart?` (null when not found). |
+| `CachedBasketRepository` | Decorator over `BasketRepository` — transparently caches results in Redis using `IDistributedCache`. Cache-set is skipped when the inner repository returns null. |
 
-The `CachedBasketRepository` is registered using **Scrutor's** decorator pattern, requiring no changes to consumers.
+The `CachedBasketRepository` is registered using **.NET keyed services** — no third-party decorator library required:
+
+```csharp
+builder.Services.AddKeyedScoped<IBasketRepository, BasketRepository>("basket:inner");
+builder.Services.AddScoped<IBasketRepository>(provider =>
+    new CachedBasketRepository(
+        provider.GetRequiredKeyedService<IBasketRepository>("basket:inner"),
+        provider.GetRequiredService<IDistributedCache>()));
+```
 
 ## API Endpoints
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/basket/{userName}` | Retrieve the shopping cart for a user |
+| `GET` | `/basket/{userName}` | Retrieve the shopping cart for a user. Returns `404` when not found. |
 | `POST` | `/basket` | Create or update the shopping cart for a user |
 | `DELETE` | `/basket/{userName}` | Delete the shopping cart for a user |
-| `POST` | `/basket/checkout` | Publish a `BasketCheckoutEvent` and clear the basket |
+| `POST` | `/basket/checkout` | Publish a `BasketCheckoutEvent` and clear the basket. Returns `404` when basket does not exist. |
 | `GET` | `/health` | Health check endpoint |
 
 ## Dependencies
 
 | Package | Source | Purpose |
 |---|---|---|
-| [Carter](https://github.com/CarterCommunity/Carter) | Basket.API | Minimal API endpoint modules (`ICarterModule`) |
-| [MediatR](https://github.com/jbogard/MediatR) | BuildingBlocks | CQRS mediator — `ISender`, `IRequest` |
+| [WolverineFx](https://wolverine.netlify.app/) | Basket.API | In-process message bus (`IMessageBus`) — replaces MediatR `ISender` |
+| [WolverineFx.FluentValidation](https://wolverine.netlify.app/) | Basket.API | Validates commands via `UseFluentValidation(RegistrationBehavior.ExplicitRegistration)` |
+| [WolverineFx.Marten](https://wolverine.netlify.app/) | Basket.API | Wolverine–Marten session integration (`.IntegrateWithWolverine()`) |
 | [Marten](https://martendb.io/) | Basket.API | PostgreSQL document store / ORM |
-| [Mapster](https://github.com/MapsterMapper/Mapster) | BuildingBlocks | Object mapping (`.Adapt<>()`) in endpoints |
-| [Scrutor](https://github.com/khellang/Scrutor) | Basket.API | Decorator registration for `IBasketRepository` |
+| [Mapster](https://github.com/MapsterMapper/Mapster) | Basket.API | Object mapping (`.Adapt<>()`) in endpoints and handlers |
 | [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/) | Basket.API | Distributed cache (`IDistributedCache`) |
-| [FluentValidation](https://fluentvalidation.net/) | BuildingBlocks | Request validation via MediatR pipeline |
+| [FluentValidation](https://fluentvalidation.net/) | Basket.API | Validator classes; wired into Wolverine pipeline |
 | [Grpc.AspNetCore](https://grpc.io/) | Basket.API | gRPC client for Discount service |
-| [MassTransit.RabbitMQ](https://masstransit.io/) | BuildingBlocks.Messaging | RabbitMQ transport — publishes `BasketCheckoutEvent` |
-| [WolverineFx](https://wolverine.netlify.app/) | Basket.API / BuildingBlocks | Included for planned migration from MediatR |
-| [WolverineFx.FluentValidation](https://wolverine.netlify.app/) | Basket.API | Wolverine validation middleware (planned) |
-| [WolverineFx.Marten](https://wolverine.netlify.app/) | Basket.API | Wolverine–Marten session integration (planned) |
-| BuildingBlocks | Project ref | Shared CQRS interfaces, behaviors, and exception handler |
+| [MassTransit.RabbitMQ](https://masstransit.io/) | BuildingBlocks.Messaging | RabbitMQ transport — publishes `BasketCheckoutEvent` via `IPublishEndpoint` |
+| BuildingBlocks | Project ref | Shared generic `CustomExceptionHandler` (`BuildingBlocks.Exceptions.Handler`) |
 | BuildingBlocks.Messaging | Project ref | `AddMessageBroker` helper + `BasketCheckoutEvent` definition |
 
 ## Configuration
@@ -158,6 +164,7 @@ MassTransit is registered with `AddMessageBroker(configuration)` (no assembly ar
 ```
 Basket.API/
 ├── Basket/                   # Feature slices
+│   ├── BasketEndpoints.cs    # MapGroup aggregator — registers all routes
 │   ├── GetBasket/
 │   ├── StoreBasket/
 │   ├── DeleteBasket/
@@ -171,8 +178,18 @@ Basket.API/
 ├── Models/                   # Domain models
 │   ├── ShoppingCart.cs
 │   └── ShoppingCartItem.cs
-├── Exceptions/               # Custom exceptions
-│   └── BasketNotFoundException.cs
 ├── Program.cs                # Application entry point & DI registration
 └── Dockerfile
 ```
+
+## Exception Handling
+
+`Program.cs` registers a shared generic exception handler from BuildingBlocks:
+
+```csharp
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+```
+
+Implementation location:
+
+`src/BuildingBlocks/BuildingBlocks/Exceptions/Handler/CustomExceptionHandler.cs`

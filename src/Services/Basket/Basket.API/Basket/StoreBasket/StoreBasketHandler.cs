@@ -1,12 +1,11 @@
 ﻿using Basket.API.Data;
 using Basket.API.Models;
-using BuildingBlocks.CQRS;
 using Discount.Grpc;
 using FluentValidation;
 
 namespace Basket.API.Basket.StoreBasket
 {
-    public record StoreBasketCommand(ShoppingCart Cart) : ICommand<StoreBasketResult>;
+    public record StoreBasketCommand(ShoppingCart Cart);
 
     public record StoreBasketResult(string UserName);
 
@@ -19,8 +18,7 @@ namespace Basket.API.Basket.StoreBasket
         }
     }
 
-    public class StoreBasketCommandHandler(IBasketRepository repository, DiscountProtoService.DiscountProtoServiceClient discountProtoService) 
-        : ICommandHandler<StoreBasketCommand, StoreBasketResult>
+    public class StoreBasketCommandHandler(IBasketRepository repository, DiscountProtoService.DiscountProtoServiceClient discountProtoService)
     {
         public async Task<StoreBasketResult> Handle(StoreBasketCommand request, CancellationToken cancellationToken)
         {

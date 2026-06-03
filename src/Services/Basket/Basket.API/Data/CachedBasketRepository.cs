@@ -15,7 +15,7 @@ namespace Basket.API.Data
             return true;
         }
 
-        public async Task<ShoppingCart> GetBasketAsync(string userName, CancellationToken cancellationToken = default)
+        public async Task<ShoppingCart?> GetBasketAsync(string userName, CancellationToken cancellationToken = default)
         {
             var cachedBasket = await cache.GetStringAsync(userName, cancellationToken);
             if (!string.IsNullOrEmpty(cachedBasket))
@@ -24,6 +24,8 @@ namespace Basket.API.Data
             }
 
             var basket = await repository.GetBasketAsync(userName, cancellationToken);
+            if (basket is null) return null;
+
             await cache.SetStringAsync(userName, JsonSerializer.Serialize(basket), cancellationToken);
 
             return basket;

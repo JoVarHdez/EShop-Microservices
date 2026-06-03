@@ -1,22 +1,21 @@
 ﻿using Basket.API.Models;
-using Carter;
 using Mapster;
-using MediatR;
+using Wolverine;
 
 namespace Basket.API.Basket.StoreBasket
 {
     public record StoreBasketRequest(ShoppingCart Cart);
     public record StoreBasketResponse(string UserName);
 
-    public class StoreBasketEndpoints : ICarterModule
+    public static class StoreBasketEndpoints
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapStoreBasketEndpoint(this RouteGroupBuilder group)
         {
-            app.MapPost("/basket", async (StoreBasketRequest request, ISender sender) =>
+            group.MapPost("/", async (StoreBasketRequest request, IMessageBus bus) =>
             {
                 var command = request.Adapt<StoreBasketCommand>();
 
-                var result = await sender.Send(command);
+                var result = await bus.InvokeAsync<StoreBasketResult>(command);
 
                 var response = result.Adapt<StoreBasketResponse>();
 
@@ -27,6 +26,8 @@ namespace Basket.API.Basket.StoreBasket
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithSummary("Stores a shopping basket for a user.")
                 .WithDescription("Stores a shopping basket for a user.");
+
+            return group;
         }
     }
 }

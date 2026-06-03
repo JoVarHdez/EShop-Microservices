@@ -25,8 +25,6 @@ The Catalog API provides full CRUD operations for products. It uses [Marten](htt
 Catalog.API/
 ├── Data/
 │   └── CatalogInitialData.cs        # Seed data for development
-├── Exceptions/
-│   └── ProductNotFoundException.cs  # Domain-specific exception
 ├── Models/
 │   └── Product.cs                   # Product entity
 ├── Products/                        # Vertical slices (one folder per feature)
@@ -149,4 +147,8 @@ The API will be available at:
 - **Vertical slice architecture** — each feature is self-contained in its own folder with its endpoint, handler, command/query record, and validator.
 - **CQRS** — commands and queries are defined as records implementing `ICommand<TResult>` / `IQuery<TResult>` from the shared `BuildingBlocks` project.
 - **Cross-cutting behaviors** — `ValidationBehavior` (runs FluentValidation before every handler) and `LoggingBehavior` (logs request/response) are registered as MediatR pipeline behaviors via the `BuildingBlocks` library.
-- **Exception handling** — `CustomExceptionHandler` from `BuildingBlocks` maps domain exceptions (e.g., `ProductNotFoundException`) to appropriate HTTP problem responses.
+- **Exception handling** — `CustomExceptionHandler` from `BuildingBlocks` is a generic 500 safety net for unexpected exceptions.
+
+Shared handler location:
+
+`src/BuildingBlocks/BuildingBlocks/Exceptions/Handler/CustomExceptionHandler.cs`

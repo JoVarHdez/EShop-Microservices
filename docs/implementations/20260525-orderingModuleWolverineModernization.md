@@ -2,6 +2,38 @@
 
 > Spec: [`docs/specs/20260525-orderingModuleWolverineModernization.md`](../specs/20260525-orderingModuleWolverineModernization.md)
 
+## Implementation Status
+
+Status: Completed on 2026-06-04
+
+Completed scope:
+
+- Phase 1: Completed.
+- Phase 2: Completed.
+- Phase 3: Completed.
+- Phase 4: Completed.
+- Phase 5: Completed.
+
+Code references:
+
+- `src/Services/Ordering/Ordering.API/Program.cs`
+- `src/Services/Ordering/Ordering.API/DepedencyInjection.cs`
+- `src/Services/Ordering/Ordering.API/Endpoints/OrdersEndpoints.cs`
+- `src/Services/Ordering/Ordering.Application/DepedencyInjection.cs`
+- `src/Services/Ordering/Ordering.Application/Orders/EventHandlers/Integration/BasketCheckoutEventHandler.cs`
+- `src/Services/Ordering/Ordering.Infrastructure/Data/Interceptors/DispatchDomainEventsInterceptor.cs`
+- `src/Services/Ordering/Ordering.Core/Abstractions/IDomainEvent.cs`
+
+Validation summary:
+
+- Solution build succeeded after modernization.
+- Ordering grep checks for legacy Carter, MediatR, and BuildingBlocks.CQRS symbols returned no matches in source project files.
+
+Implementation lesson:
+
+- Removing MediatR from Ordering.Application required one additional integration-path update not explicitly listed in phase tasks: `BasketCheckoutEventHandler` needed to switch from `ISender` to `IMessageBus`.
+- Enabling Wolverine FluentValidation middleware in Ordering.API required an explicit package reference to `WolverineFx.FluentValidation`.
+
 **TL;DR** — 5 phases, lowest-risk first: (1) delete dead query record files + `OrderNotFoundException` + update `.csproj` references; (2) strip MediatR from the domain core's `IDomainEvent`; (3) transform all Application-layer handlers — command handler steps (3.1–3.6) and query handler steps (3.7–3.9) run parallel to Phase 2 since they don't touch `IDomainEvent`; domain-event handler steps (3.10–3.11) and the DI update (3.12) run after Phase 2; (4) swap `IMediator` for `IMessageBus` in the EF Core interceptor; (5) rewrite all 6 endpoint files to static classes, create the `MapOrdersEndpoints` aggregator, and wire Wolverine into the host.
 
 ---

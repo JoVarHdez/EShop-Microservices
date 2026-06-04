@@ -5,7 +5,6 @@ The domain layer of the Ordering microservice. Contains all business logic, doma
 ## Target Framework
 
 - .NET 10.0
-- MediatR 14.1.0 (for domain event contracts)
 
 ## Project Structure
 
@@ -29,7 +28,7 @@ Ordering.Core/
 | `IAggregate` | Exposes `DomainEvents` collection and `ClearDomainEvents()` |
 | `IAggregate<T>` | Combines `IAggregate` and `IEntity<T>` |
 | `Aggregate<TId>` | Base class for aggregate roots; manages the internal domain event list |
-| `IDomainEvent` | Marker interface extending MediatR's `INotification`; carries `EventId`, `OcurredOn`, and `EventType` |
+| `IDomainEvent` | Domain event contract with default metadata (`EventId`, `OcurredOn`, `EventType`) |
 
 ## Models
 
@@ -103,7 +102,7 @@ Domain Exception: "<message>" throws from Domain Layer.
 
 ## Design Notes
 
-- **No infrastructure dependencies.** This project references only MediatR (for `INotification`) and the .NET BCL.
+- **No external framework dependency.** The domain event contract does not depend on MediatR or Wolverine abstractions.
 - **Encapsulation.** All model mutations go through factory methods or explicit domain operations; setters are `private`.
 - **Validation at the boundary.** Value objects and factory methods use `ArgumentException`/`ArgumentOutOfRangeException` guards so invalid state is impossible to construct.
-- **Domain event pattern.** Events are collected inside the aggregate and cleared by the application layer after being dispatched through MediatR, keeping the domain free of side-effect concerns.
+- **Domain event pattern.** Events are collected inside the aggregate and cleared by the application layer after dispatch, keeping the domain free of side-effect concerns.

@@ -1,8 +1,6 @@
-﻿using MediatR;
-
-namespace Ordering.Core.Abstractions
+﻿namespace Ordering.Core.Abstractions
 {
-    public interface IDomainEvent : INotification
+    public interface IDomainEvent
     {
         Guid EventId => Guid.NewGuid();
         public DateTime OcurredOn => DateTime.UtcNow;

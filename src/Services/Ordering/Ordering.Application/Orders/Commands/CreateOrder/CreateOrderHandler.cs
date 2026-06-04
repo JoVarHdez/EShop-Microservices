@@ -1,14 +1,13 @@
-﻿using BuildingBlocks.CQRS;
-using Ordering.Application.Data;
+﻿using Ordering.Application.Data;
 using Ordering.Application.DTOs;
 using Ordering.Core.Models;
 using Ordering.Core.ValueObjects;
 
 namespace Ordering.Application.Orders.Commands.CreateOrder
 {
-    public class CreateOrderHandler(IApplicationDbContext dbContext) : ICommandHandler<CreateOrderCommand, CreateOrderResult>
+    public class CreateOrderHandler(IApplicationDbContext dbContext)
     {
-        public async Task<CreateOrderResult> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+        public async Task<CreateOrderResult> HandleAsync(CreateOrderCommand request, CancellationToken cancellationToken)
         {
             var order = CreateNewOrder(request.Order);
 

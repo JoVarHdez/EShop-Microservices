@@ -8,6 +8,7 @@ The infrastructure layer of the Ordering microservice. Implements persistence co
 - `Microsoft.EntityFrameworkCore.SqlServer` 10.0.8
 - `Microsoft.EntityFrameworkCore.Tools` / `.Design` 10.0.8 (build-time only)
 - `Microsoft.AspNetCore.App` (framework reference)
+- `WolverineFx` 5.39.1
 - `Ordering.Application` (project reference — depends on application layer interfaces)
 
 ## Project Structure
@@ -107,7 +108,7 @@ Hooks into `SavingChanges` / `SavingChangesAsync` to publish domain events colle
 
 1. Collects all `IAggregate` entries in the change tracker that have pending domain events.
 2. Drains and clears the event list from each aggregate (`ClearDomainEvents`).
-3. Publishes each event through MediatR's `IMediator.Publish`.
+3. Publishes each event through Wolverine `IMessageBus.PublishAsync`.
 
 This ensures event handlers run within the same unit of work as the database write.
 

@@ -1,5 +1,4 @@
 ﻿using MassTransit;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.FeatureManagement;
 using Ordering.Application.Extensions;
@@ -11,7 +10,6 @@ namespace Ordering.Application.Orders.EventHandlers.Domain
         IPublishEndpoint publishEndpoint,
         IFeatureManager featureManager,
         ILogger<OrderCreatedEventHandler> logger)
-        : INotificationHandler<OrderCreatedEvent>
     {
         public async Task Handle(OrderCreatedEvent notification, CancellationToken cancellationToken)
         {

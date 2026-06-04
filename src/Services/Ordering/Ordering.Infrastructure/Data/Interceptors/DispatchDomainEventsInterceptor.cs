@@ -1,11 +1,11 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Ordering.Core.Abstractions;
+using Wolverine;
 
 namespace Ordering.Infrastructure.Data.Interceptors
 {
-    public class DispatchDomainEventsInterceptor(IMediator mediator) : SaveChangesInterceptor
+    public class DispatchDomainEventsInterceptor(IMessageBus bus) : SaveChangesInterceptor
     {
         public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {
@@ -31,9 +31,9 @@ namespace Ordering.Infrastructure.Data.Interceptors
 
             aggregates.ToList().ForEach(a => a.ClearDomainEvents());
 
-            foreach (var domainEvent in domainEvents) 
-            { 
-                await mediator.Publish(domainEvent);
+            foreach (var domainEvent in domainEvents)
+            {
+                await bus.PublishAsync(domainEvent);
             }
         }
     }

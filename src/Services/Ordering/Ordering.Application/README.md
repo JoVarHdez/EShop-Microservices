@@ -1,174 +1,135 @@
 # Ordering.Application
 
-The application layer of the Ordering microservice. Implements use cases as CQRS commands and queries dispatched through MediatR, with cross-cutting pipeline behaviors for validation and logging. Contains no infrastructure or transport concerns.
+Application layer for the Ordering service. This layer now follows Wolverine handler conventions and direct DI for read-side query services.
 
 ## Target Framework & Dependencies
 
 - .NET 10.0
-- `Microsoft.EntityFrameworkCore` 10.0.8 (abstractions only — no provider)
-- `BuildingBlocks` (project reference — CQRS markers, pipeline behaviors, pagination)
-- `BuildingBlocks.Messaging` (project reference — MassTransit integration, `BasketCheckoutEvent`)
-- `Ordering.Core` (project reference — domain models, value objects, events)
+- Microsoft.EntityFrameworkCore 10.0.8 (abstractions only)
+- Project references: BuildingBlocks, BuildingBlocks.Messaging, Ordering.Core
 
 ## Project Structure
 
 ```
 Ordering.Application/
-├── DepedencyInjection.cs            # IServiceCollection extension
+├── DepedencyInjection.cs
 ├── Data/
-│   └── IApplicationDbContext.cs     # Persistence abstraction
-├── DTOs/                            # Data transfer objects (records)
-├── Exceptions/
-│   └── OrderNotFoundException.cs
+│   └── IApplicationDbContext.cs
+├── DTOs/
 ├── Extensions/
-│   └── OrderExtensions.cs           # Order → OrderDto projection
+│   └── OrderExtensions.cs
 └── Orders/
-    ├── Commands/
-    │   ├── CreateOrder/
-    │   ├── DeleteOrder/
-    │   └── UpdateOrder/
-    ├── EventHandlers/
-    │   ├── Domain/                  # MediatR INotificationHandler implementations
-    │   └── Integration/             # Integration event handlers (in progress)
-    └── Queries/
-        ├── GetOrders/               # Paginated list
-        ├── GetOrderByCustomer/
-        └── GetOrderByName/
+      ├── Commands/
+      │   ├── CreateOrder/
+      │   ├── DeleteOrder/
+      │   └── UpdateOrder/
+      ├── EventHandlers/
+      │   ├── Domain/
+      │   └── Integration/
+      └── Queries/
+            ├── GetOrders/
+            ├── GetOrderByCustomer/
+            └── GetOrderByName/
 ```
 
 ## Registration
 
-Call `AddApplicationServices` from the host project:
+AddApplicationServices now registers:
 
-```csharp
-builder.Services.AddApplicationServices(builder.Configuration);
-```
+- FluentValidation validators from this assembly.
+- Query services for direct endpoint injection:
+- GetOrdersHandler
+- GetOrderByCustomerHandler
+- GetOrdersByNameHandler
+- Feature management.
+- MassTransit broker integration via AddMessageBroker.
 
-This registers:
+## Command Handlers
 
-1. MediatR, scanning the assembly for all handlers, with two open generic pipeline behaviors:
-   - `ValidationBehavior<,>` — runs FluentValidation validators before the handler
-   - `LoggingBehavior<,>` — logs request/response details around the handler
-2. `AddFeatureManagement()` — ASP.NET Core Feature Management (reads `FeatureManagement` config section)
-3. `AddMessageBroker(configuration, assembly)` — MassTransit/RabbitMQ consumer registration, scanning the assembly for `IConsumer<T>` implementations
+Commands are plain records and handlers use HandleAsync methods discovered by Wolverine.
 
-## Persistence Abstraction
+### CreateOrder
 
-`IApplicationDbContext` decouples the application layer from the EF Core implementation. Handlers depend on this interface; `ApplicationDbContext` in `Ordering.Infrastructure` satisfies it.
+- Input: CreateOrderCommand(OrderDto Order)
+- Output: CreateOrderResult(Guid Id)
+- Validation: non-empty order name, valid customer, at least one order item.
 
-```csharp
-public interface IApplicationDbContext
-{
-    DbSet<Customer> Customers { get; }
-    DbSet<Order> Orders { get; }
-    DbSet<OrderItem> OrderItems { get; }
-    DbSet<Product> Products { get; }
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-}
-```
+### UpdateOrder
 
-## DTOs
+- Input: UpdateOrderCommand(OrderDto Order)
+- Output: UpdateOrderCommandResult discriminated hierarchy:
+- UpdateOrderResult(bool IsSuccess)
+- UpdateOrderNotFound
+- Behavior: no not-found exception throw; not-found is modeled as return type.
 
-All DTOs are immutable C# `record` types used as the public contract between the API layer and application handlers.
+### DeleteOrder
 
-| DTO | Fields |
-|---|---|
-| `OrderDto` | `Id`, `CustomerId`, `OrderName`, `ShippingAddress`, `BillingAddress`, `Payment`, `Status`, `OrderItems` |
-| `OrderItemDto` | `OrderId`, `ProductId`, `Quantity`, `Price` |
-| `AddressDto` | `FirstName`, `LastName`, `EmailAddress`, `AddressLine`, `Country`, `State`, `ZipCode` |
-| `PaymentDto` | `CardName`, `CardNumber`, `Expiration`, `Cvv`, `PaymentMethod` |
+- Input: DeleteOrderCommand(Guid OrderId)
+- Output: DeleteOrderCommandResult discriminated hierarchy:
+- DeleteOrderResult(bool IsSuccess)
+- DeleteOrderNotFound
+- Behavior: no not-found exception throw; not-found is modeled as return type.
 
-`OrderExtensions` provides two projection helpers backed by a shared private `DtoFromOrder(Order)` method:
+## Query Handlers
 
-| Method | Signature | Used by |
-|---|---|---|
-| `ToOrderDtoList()` | `IEnumerable<Order>` → `IEnumerable<OrderDto>` | All query handlers |
-| `ToOrderDto()` | `Order` → `OrderDto` | `OrderCreatedEventHandler` (integration event) |
+The previous query message-carrier records were removed. Query handlers are injectable services that accept primitive parameters.
 
-## Commands
+- GetOrdersHandler.HandleAsync(PaginationRequest)
+- GetOrderByCustomerHandler.HandleAsync(Guid customerId)
+- GetOrdersByNameHandler.HandleAsync(string name)
 
-### `CreateOrderCommand`
-| | |
-|---|---|
-| **Input** | `OrderDto Order` |
-| **Output** | `CreateOrderResult(Guid Id)` |
-| **Validation** | `OrderName` not empty · `CustomerId` not null · `OrderItems` not empty |
-| **Handler** | Constructs value objects, calls `Order.Create(...)`, adds all order items, persists via `IApplicationDbContext` |
+Each query handler keeps response contract records alongside implementation:
 
-### `UpdateOrderCommand`
-| | |
-|---|---|
-| **Input** | `OrderDto Order` |
-| **Output** | `UpdateOrderResult(bool IsSuccess)` |
-| **Validation** | `Order.Id` not empty · `CustomerId` not null · `OrderName` not empty |
-| **Handler** | Loads order by `OrderId`, throws `OrderNotFoundException` if missing, calls `Order.Update(...)`, persists |
+- GetOrdersResult
+- GetOrderByCustomerResult
+- GetOrdersByNameResult
 
-### `DeleteOrderCommand`
-| | |
-|---|---|
-| **Input** | `Guid OrderId` |
-| **Output** | `DeleteOrderResult(bool IsSuccess)` |
-| **Validation** | `OrderId` not empty |
-| **Handler** | Loads order by `OrderId`, throws `OrderNotFoundException` if missing, removes and persists |
+## Domain and Integration Events
 
-## Queries
+### Domain event handlers
 
-### `GetOrdersQuery`
-| | |
-|---|---|
-| **Input** | `PaginationRequest` (`PageIndex`, `PageSize`) |
-| **Output** | `GetOrdersResult(PaginatedResult<OrderDto>)` |
-| **Behaviour** | Returns all orders sorted by `OrderName`, paginated; includes `OrderItems`; uses `AsNoTracking` implicitly via projection |
+Domain handlers no longer implement MediatR interfaces and are discovered by Wolverine convention:
 
-### `GetOrderByCustomerQuery`
-| | |
-|---|---|
-| **Input** | `Guid CustomerId` |
-| **Output** | `GetOrderByCustomerResult(IEnumerable<OrderDto>)` |
-| **Behaviour** | Filters by `CustomerId` value object, sorted by `OrderName`, includes `OrderItems`, `AsNoTracking` |
+- OrderCreatedEventHandler
+- OrderUpdatedEventHandler
 
-### `GetOrdersByNameQuery`
-| | |
-|---|---|
-| **Input** | `string Name` |
-| **Output** | `GetOrdersByNameResult(IEnumerable<OrderDto>)` |
-| **Behaviour** | Contains-match on `OrderName.Value`, sorted by `OrderName`, includes `OrderItems`, `AsNoTracking` |
+### Integration event handler
 
-## Event Handlers
+BasketCheckoutEventHandler remains an IConsumer<BasketCheckoutEvent> and now dispatches CreateOrderCommand through Wolverine IMessageBus.
 
-### Domain Event Handlers
+## Persistence Boundary
 
-Registered automatically by MediatR. Invoked by `DispatchDomainEventsInterceptor` in the infrastructure layer during `SaveChangesAsync`.
+IApplicationDbContext remains the persistence abstraction consumed by command and query handlers.
 
-| Handler | Event | Current Behaviour |
-|---|---|---|
-| `OrderCreatedEventHandler` | `OrderCreatedEvent` | Logs order ID; if the `OrderFullfilment` feature flag is enabled, maps the order to `OrderDto` via `ToOrderDto()` and publishes it as an integration event through MassTransit `IPublishEndpoint` |
-| `OrderUpdatedEventHandler` | `OrderUpdatedEvent` | Logs event type name at Information level |
-
-### Integration Event Handlers
-
-| Handler | Consumer type | Behaviour |
-|---|---|---|
-| `BasketCheckoutEventHandler` | `IConsumer<BasketCheckoutEvent>` | Receives a `BasketCheckoutEvent` from the message broker; maps it to a `CreateOrderCommand` (with a fixed two-item order) and sends it via MediatR `ISender` |
-
-## Exceptions
-
-`OrderNotFoundException` extends `NotFoundException` from `BuildingBlocks.Exceptions` and is thrown by `UpdateOrderHandler` and `DeleteOrderHandler` when the requested order does not exist. The base `NotFoundException` message format is:
+## Request and Event Flow
 
 ```
-Order (id) was not found.
+API endpoint
+  -> IMessageBus.InvokeAsync(command)
+        -> FluentValidation middleware
+              -> command handler (HandleAsync)
+                    -> SaveChangesAsync
+                          -> Infrastructure interceptors
+                                -> DispatchDomainEventsInterceptor
+                                      -> IMessageBus.PublishAsync(domainEvent)
+
+API query endpoint
+  -> direct DI query handler
+        -> HandleAsync(...)
 ```
 
-## Request Flow
+## Related Implementation Files
 
-```
-API layer
-  └─► IMediator.Send(command / query)
-        └─► LoggingBehavior  ──► logs before/after
-              └─► ValidationBehavior  ──► runs FluentValidation; throws on failure
-                    └─► Handler  ──► executes use case via IApplicationDbContext
-                          └─► SaveChangesAsync
-                                ├─ AuditableEntityInterceptor  ──► stamps audit fields
-                                └─ DispatchDomainEventsInterceptor  ──► publishes domain events
-                                      └─► INotificationHandler  ──► e.g. OrderCreatedEventHandler
-```
+- [DepedencyInjection.cs](DepedencyInjection.cs)
+- [Orders/Commands/CreateOrder/CreateOrderCommand.cs](Orders/Commands/CreateOrder/CreateOrderCommand.cs)
+- [Orders/Commands/CreateOrder/CreateOrderHandler.cs](Orders/Commands/CreateOrder/CreateOrderHandler.cs)
+- [Orders/Commands/UpdateOrder/UpdateOrderCommand.cs](Orders/Commands/UpdateOrder/UpdateOrderCommand.cs)
+- [Orders/Commands/UpdateOrder/UpdateOrderHandler.cs](Orders/Commands/UpdateOrder/UpdateOrderHandler.cs)
+- [Orders/Commands/DeleteOrder/DeleteOrderCommand.cs](Orders/Commands/DeleteOrder/DeleteOrderCommand.cs)
+- [Orders/Commands/DeleteOrder/DeleteOrderHandler.cs](Orders/Commands/DeleteOrder/DeleteOrderHandler.cs)
+- [Orders/Queries/GetOrders/GetOrdersHandler.cs](Orders/Queries/GetOrders/GetOrdersHandler.cs)
+- [Orders/Queries/GetOrderByCustomer/GetOrderByCustomerHandler.cs](Orders/Queries/GetOrderByCustomer/GetOrderByCustomerHandler.cs)
+- [Orders/Queries/GetOrderByName/GetOrdersByNameHandler.cs](Orders/Queries/GetOrderByName/GetOrdersByNameHandler.cs)
+- [Orders/EventHandlers/Domain/OrderCreatedEventHandler.cs](Orders/EventHandlers/Domain/OrderCreatedEventHandler.cs)
+- [Orders/EventHandlers/Domain/OrderUpdatedEventHandler.cs](Orders/EventHandlers/Domain/OrderUpdatedEventHandler.cs)
+- [Orders/EventHandlers/Integration/BasketCheckoutEventHandler.cs](Orders/EventHandlers/Integration/BasketCheckoutEventHandler.cs)

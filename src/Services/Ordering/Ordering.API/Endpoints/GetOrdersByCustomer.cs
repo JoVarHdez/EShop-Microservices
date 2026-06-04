@@ -1,19 +1,17 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
 using Ordering.Application.DTOs;
 using Ordering.Application.Orders.Queries.GetOrderByCustomer;
 
 namespace Ordering.API.Endpoints
 {
     public record GetOrdersByCustomerResponse(IEnumerable<OrderDto> Orders);
-    public class GetOrdersByCustomer : ICarterModule
+    public static class GetOrdersByCustomerEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapGetOrdersByCustomer(this RouteGroupBuilder group)
         {
-            app.MapGet("/orders/customer/{customerId}", async (Guid customerId, ISender sender) =>
+            group.MapGet("/customer/{customerId}", async (Guid customerId, GetOrderByCustomerHandler handler) =>
             {
-                var result = await sender.Send(new GetOrderByCustomerQuery(customerId));
+                var result = await handler.HandleAsync(customerId);
 
                 var response = result.Adapt<GetOrdersByCustomerResponse>();
 
@@ -25,6 +23,8 @@ namespace Ordering.API.Endpoints
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Gets orders by customer ID.")
                 .WithDescription("Retrieves a list of orders associated with the specified customer ID.");
+
+            return group;
         }
     }
 }

@@ -17,10 +17,10 @@
     <Project Path="Services/Discount/Discount.Grpc/Discount.Grpc.csproj" Id="e92fb374-36bf-42e7-b643-159620899742" />
   </Folder>
   <Folder Name="/Services/Ordering/">
-    <!-- <Project Path="Services/Ordering/Ordering.API/Ordering.API.csproj" Id="6a271749-f0b8-4bd9-9dbc-78529d86ffaa" />
+    <Project Path="Services/Ordering/Ordering.API/Ordering.API.csproj" Id="6a271749-f0b8-4bd9-9dbc-78529d86ffaa" />
     <Project Path="Services/Ordering/Ordering.Application/Ordering.Application.csproj" Id="b2625498-894c-4a58-ac71-cafc373689e5" />
     <Project Path="Services/Ordering/Ordering.Core/Ordering.Core.csproj" Id="642515ef-18dc-4802-9e76-b59286ffc783" />
-    <Project Path="Services/Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj" Id="380ff637-3352-4142-accc-d5929e80a27d" /> -->
+    <Project Path="Services/Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj" Id="380ff637-3352-4142-accc-d5929e80a27d" />
   </Folder>
   <Folder Name="/WebApps/">
     <!-- <Project Path="WebApps/Shopping.Web.Razor/Shopping.Web.Razor.csproj" Id="96bf77ed-21d7-4971-8412-4e2ef285cb98" /> -->

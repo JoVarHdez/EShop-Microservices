@@ -1,22 +1,21 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
 using Ordering.Application.DTOs;
 using Ordering.Application.Orders.Commands.CreateOrder;
+using Wolverine;
 
 namespace Ordering.API.Endpoints
 {
     public record CreateOrderRequest(OrderDto Order);
     public record CreateOrderResponse(Guid Id);
-    public class CreateOrder : ICarterModule
+    public static class CreateOrderEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapCreateOrder(this RouteGroupBuilder group)
         {
-            app.MapPost("/orders", async (CreateOrderRequest request, ISender sender) =>
+            group.MapPost("", async (CreateOrderRequest request, IMessageBus bus) =>
             {
                 var command = request.Adapt<CreateOrderCommand>();
 
-                var result = await sender.Send(command);
+                var result = await bus.InvokeAsync<CreateOrderResult>(command);
 
                 var response = result.Adapt<CreateOrderResponse>();
 
@@ -27,6 +26,8 @@ namespace Ordering.API.Endpoints
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithSummary("Creates a new order.")
                 .WithDescription("Creates a new order with the specified details.");
+
+            return group;
         }
     }
 }

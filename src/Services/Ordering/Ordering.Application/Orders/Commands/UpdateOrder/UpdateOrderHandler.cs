@@ -1,24 +1,20 @@
-﻿using BuildingBlocks.CQRS;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Ordering.Application.Data;
 using Ordering.Application.DTOs;
-using Ordering.Application.Exceptions;
 using Ordering.Core.Models;
 using Ordering.Core.ValueObjects;
 
 namespace Ordering.Application.Orders.Commands.UpdateOrder
 {
-    public class UpdateOrderHandler(IApplicationDbContext dbContext) : ICommandHandler<UpdateOrderCommand, UpdateOrderResult>
+    public class UpdateOrderHandler(IApplicationDbContext dbContext)
     {
-        public async Task<UpdateOrderResult> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
+        public async Task<UpdateOrderCommandResult> HandleAsync(UpdateOrderCommand request, CancellationToken cancellationToken)
         {
             var orderId = OrderId.Of(request.Order.Id);
             var order = await dbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
-            if (order == null)
-            {
-                throw new OrderNotFoundException(request.Order.Id);
-            }
+            if (order is null)
+                return new UpdateOrderNotFound();
 
             UpdateOrderWithNewValues(order, request.Order);
 

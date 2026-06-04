@@ -1,14 +1,14 @@
 ﻿using BuildingBlocks.Messaging.Events;
 using MassTransit;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Ordering.Application.DTOs;
 using Ordering.Application.Orders.Commands.CreateOrder;
 using Ordering.Core.Enums;
+using Wolverine;
 
 namespace Ordering.Application.Orders.EventHandlers.Integration
 {
-    public class BasketCheckoutEventHandler(ISender sender, ILogger<BasketCheckoutEventHandler> logger) 
+    public class BasketCheckoutEventHandler(IMessageBus bus, ILogger<BasketCheckoutEventHandler> logger)
         : IConsumer<BasketCheckoutEvent>
     {
         public async Task Consume(ConsumeContext<BasketCheckoutEvent> context)
@@ -16,7 +16,7 @@ namespace Ordering.Application.Orders.EventHandlers.Integration
             logger.LogInformation("Integration Event: {EventName} - {Id}", context.Message.GetType().Name, context.Message.Id);
 
             var command = MapToCreateOrderCommand(context.Message);
-            await sender.Send(command);
+            await bus.InvokeAsync(command);
         }
 
         private static CreateOrderCommand MapToCreateOrderCommand(BasketCheckoutEvent message)

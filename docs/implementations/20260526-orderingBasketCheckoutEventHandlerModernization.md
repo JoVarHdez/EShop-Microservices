@@ -4,6 +4,14 @@
 
 **TL;DR** — Single-phase modernization: replace MediatR's `ISender` with Wolverine's `IMessageBus` in the `BasketCheckoutEventHandler` integration event consumer. MassTransit's `IConsumer<BasketCheckoutEvent>` stays unchanged.
 
+## Implementation Status (2026-06-04)
+
+- ✅ Phase 1 completed
+- ✅ `BasketCheckoutEventHandler` uses Wolverine `IMessageBus`
+- ✅ Internal dispatch call updated to `await bus.InvokeAsync(command);`
+- ✅ Solution build passes with 0 errors
+- ⏳ Runtime smoke test and health check remain pending
+
 ---
 
 ## Relevant Files
@@ -92,7 +100,7 @@ public async Task Consume(ConsumeContext<BasketCheckoutEvent> context)
 
 ## Verification
 
-1. **Build**: `dotnet build src/eshop-microservies.slnx` must succeed with 0 errors.
+1. **Build**: `dotnet build src/eshop-microservices.slnx` must succeed with 0 errors.
 
 2. **Grep check**: Search `src/Services/Ordering/Ordering.Application/Orders/EventHandlers/Integration/` for the following — must return no results:
    - `ISender`
@@ -110,3 +118,32 @@ public async Task Consume(ConsumeContext<BasketCheckoutEvent> context)
    - Verify no MediatR references appear in the Ordering.Application logs
 
 5. **Health check**: `GET /health` on Ordering.API → `200 OK` with SQL Server health check passing
+
+### Verification Results (2026-06-04)
+
+1. ✅ **Build**
+    - Ran: `dotnet build src/eshop-microservices.slnx`
+    - Result: succeeded with 0 errors (warnings present outside this scope).
+
+2. ✅ **Grep check (no MediatR references in Integration handlers)**
+    - Verified no matches for `ISender` and `using MediatR;` under:
+      `src/Services/Ordering/Ordering.Application/Orders/EventHandlers/Integration/`
+
+3. ✅ **Grep check (expected Wolverine references in handler)**
+    - Verified matches in:
+      `src/Services/Ordering/Ordering.Application/Orders/EventHandlers/Integration/BasketCheckoutEventHandler.cs`
+    - `using Wolverine;`
+    - `IMessageBus bus`
+    - `bus.InvokeAsync`
+
+4. ⏳ **Integration smoke test**
+    - Not executed in this session.
+
+5. ⏳ **Ordering.API health check**
+    - Not executed in this session.
+
+## Implementation Lessons
+
+- Keep MassTransit and Wolverine responsibilities separated in integration consumers:
+  `IConsumer<T>` remains the transport boundary and `IMessageBus` handles in-process command dispatch.
+- When converting from MediatR to Wolverine in request/response flows, prefer `InvokeAsync(command)` unless a typed return is explicitly required by the surrounding flow.

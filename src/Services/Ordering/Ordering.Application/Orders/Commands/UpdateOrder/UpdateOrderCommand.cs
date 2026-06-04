@@ -1,12 +1,13 @@
-﻿using BuildingBlocks.CQRS;
-using FluentValidation;
+﻿using FluentValidation;
 using Ordering.Application.DTOs;
 
 namespace Ordering.Application.Orders.Commands.UpdateOrder
 {
-    public record UpdateOrderCommand(OrderDto Order) : ICommand<UpdateOrderResult>;
+    public record UpdateOrderCommand(OrderDto Order);
 
-    public record UpdateOrderResult(bool IsSuccess);
+    public abstract record UpdateOrderCommandResult;
+    public record UpdateOrderResult(bool IsSuccess) : UpdateOrderCommandResult;
+    public sealed record UpdateOrderNotFound : UpdateOrderCommandResult;
 
     public class UpdateOrderCommandValidator : AbstractValidator<UpdateOrderCommand>
     {

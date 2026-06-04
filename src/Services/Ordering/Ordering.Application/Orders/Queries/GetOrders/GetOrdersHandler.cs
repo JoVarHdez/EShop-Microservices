@@ -1,5 +1,4 @@
-﻿using BuildingBlocks.CQRS;
-using BuildingBlocks.Pagination;
+﻿using BuildingBlocks.Pagination;
 using Microsoft.EntityFrameworkCore;
 using Ordering.Application.Data;
 using Ordering.Application.DTOs;
@@ -7,12 +6,14 @@ using Ordering.Application.Extensions;
 
 namespace Ordering.Application.Orders.Queries.GetOrders
 {
-    public class GetOrdersHandler(IApplicationDbContext dbContext) : IQueryHandler<GetOrdersQuery, GetOrdersResult>
+    public record GetOrdersResult(PaginatedResult<OrderDto> Orders);
+
+    public class GetOrdersHandler(IApplicationDbContext dbContext)
     {
-        public async Task<GetOrdersResult> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
+        public async Task<GetOrdersResult> HandleAsync(PaginationRequest paginationRequest, CancellationToken cancellationToken = default)
         {
-            var pageIndex = request.PaginationRequest.PageIndex;
-            var pageSize = request.PaginationRequest.PageSize;
+            var pageIndex = paginationRequest.PageIndex;
+            var pageSize = paginationRequest.PageSize;
 
             var totalCount = await dbContext.Orders.LongCountAsync(cancellationToken);
 

@@ -1,19 +1,17 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
+﻿using Mapster;
 using Ordering.Application.DTOs;
 using Ordering.Application.Orders.Queries.GetOrderByName;
 
 namespace Ordering.API.Endpoints
 {
     public record GetOrdersByNameResponse(IEnumerable<OrderDto> Orders);
-    public class GetOrdersByName : ICarterModule
+    public static class GetOrdersByNameEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapGetOrdersByName(this RouteGroupBuilder group)
         {
-            app.MapGet("/orders/{orderName}", async (string orderName, ISender sender) =>
+            group.MapGet("/{orderName}", async (string orderName, GetOrdersByNameHandler handler) =>
             {
-                var result = await sender.Send(new GetOrdersByNameQuery(orderName));
+                var result = await handler.HandleAsync(orderName);
 
                 var response = result.Adapt<GetOrdersByNameResponse>();
                 
@@ -25,6 +23,8 @@ namespace Ordering.API.Endpoints
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Gets orders by name.")
                 .WithDescription("Retrieves a list of orders that match the specified name.");
+
+            return group;
         }
     }
 }

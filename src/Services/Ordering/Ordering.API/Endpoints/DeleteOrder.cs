@@ -1,29 +1,33 @@
-﻿using Carter;
-using Mapster;
-using MediatR;
-using Ordering.Application.Orders.Commands.DeleteOrder;
+﻿using Ordering.Application.Orders.Commands.DeleteOrder;
+using Wolverine;
 
 namespace Ordering.API.Endpoints
 {
     public record DeleteOrderResponse(bool IsSuccess);
-    public class DeleteOrder : ICarterModule
+    public static class DeleteOrderEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapDeleteOrder(this RouteGroupBuilder group)
         {
-            app.MapDelete("/orders/{id}", async (Guid id, ISender sender) =>
+            group.MapDelete("/{id}", async (Guid id, IMessageBus bus) =>
             {
-                var result = await sender.Send(new DeleteOrderCommand(id));
+                var result = await bus.InvokeAsync<DeleteOrderCommandResult>(new DeleteOrderCommand(id));
 
-                var response = result.Adapt<DeleteOrderResponse>();
-
-                return Results.Ok(response);
+                return result switch
+                {
+                    DeleteOrderResult r => Results.Ok(new DeleteOrderResponse(r.IsSuccess)),
+                    DeleteOrderNotFound => Results.NotFound(),
+                    _ => Results.StatusCode(500)
+                };
             })
                 .WithName("DeleteOrder")
                 .Produces<DeleteOrderResponse>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound)
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .ProducesProblem(StatusCodes.Status404NotFound)
                 .WithSummary("Deletes an order.")
                 .WithDescription("Deletes an order with the specified ID.");
+
+            return group;
         }
     }
 }

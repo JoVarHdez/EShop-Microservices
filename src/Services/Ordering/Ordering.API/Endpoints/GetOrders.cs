@@ -1,20 +1,18 @@
 ﻿using BuildingBlocks.Pagination;
-using Carter;
 using Mapster;
-using MediatR;
 using Ordering.Application.DTOs;
 using Ordering.Application.Orders.Queries.GetOrders;
 
 namespace Ordering.API.Endpoints
 {
     public record GetOrdersResponse(PaginatedResult<OrderDto> Orders);
-    public class GetOrders : ICarterModule
+    public static class GetOrdersEndpoint
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        public static RouteGroupBuilder MapGetOrders(this RouteGroupBuilder group)
         {
-            app.MapGet("/orders", async ([AsParameters] PaginationRequest request, ISender sender) =>
+            group.MapGet("", async ([AsParameters] PaginationRequest request, GetOrdersHandler handler) =>
             {
-                var result = await sender.Send(new GetOrdersQuery(request));
+                var result = await handler.HandleAsync(request);
 
                 var response = result.Adapt<GetOrdersResponse>();
 
@@ -25,6 +23,8 @@ namespace Ordering.API.Endpoints
                 .ProducesProblem(StatusCodes.Status400BadRequest)
                 .WithSummary("Gets all orders.")
                 .WithDescription("Retrieves a list of all orders.");
+
+            return group;
         }
     }
 }

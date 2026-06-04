@@ -1,18 +1,20 @@
-﻿using BuildingBlocks.CQRS;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Ordering.Application.Data;
+using Ordering.Application.DTOs;
 using Ordering.Application.Extensions;
 
 namespace Ordering.Application.Orders.Queries.GetOrderByName
 {
-    public class GetOrdersByNameHandler(IApplicationDbContext dbContext) : IQueryHandler<GetOrdersByNameQuery, GetOrdersByNameResult>
+    public record GetOrdersByNameResult(IEnumerable<OrderDto> Orders);
+
+    public class GetOrdersByNameHandler(IApplicationDbContext dbContext)
     {
-        public async Task<GetOrdersByNameResult> Handle(GetOrdersByNameQuery request, CancellationToken cancellationToken)
+        public async Task<GetOrdersByNameResult> HandleAsync(string name, CancellationToken cancellationToken = default)
         {
             var orders = await dbContext.Orders
                 .Include(o => o.OrderItems)
                 .AsNoTracking()
-                .Where(o => o.OrderName.Value.Contains(request.Name))
+                .Where(o => o.OrderName.Value.Contains(name))
                 .OrderBy(o => o.OrderName.Value)
                 .ToListAsync(cancellationToken);
 

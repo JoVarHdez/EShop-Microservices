@@ -11,14 +11,14 @@ namespace Shopping.Web.Razor.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            Cart = await basketService.LoadUserBasket();            
+            Cart = await basketService.LoadUserBasketAsync();            
             return Page();
         }
 
         public async Task<IActionResult> OnPostRemoveToCartAsync(Guid productId)
         {
             logger.LogInformation("Removing product {ProductId} from the cart.", productId);
-            Cart = await basketService.LoadUserBasket();
+            Cart = await basketService.LoadUserBasketAsync();
             
             Cart.Items.RemoveAll(item => item.ProductId == productId);
 

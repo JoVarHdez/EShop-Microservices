@@ -30,7 +30,7 @@ namespace Shopping.Web.Razor.Pages
                 return NotFound();
             }
 
-            var basket = await basketService.LoadUserBasket();
+            var basket = await basketService.LoadUserBasketAsync();
 
             basket.Items.Add(new ShoppingCartItemModel
 

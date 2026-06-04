@@ -35,7 +35,7 @@ namespace Shopping.Web.Razor.Pages
             logger.LogInformation("Adding product {ProductId} to the cart.", productId);
             var productResult = await catalogService.GetProductAsync(productId);
 
-            var basket = await basketService.LoadUserBasket();
+            var basket = await basketService.LoadUserBasketAsync();
 
             basket.Items.Add(new ShoppingCartItemModel
             {

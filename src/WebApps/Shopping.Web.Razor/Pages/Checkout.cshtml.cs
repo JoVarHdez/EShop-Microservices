@@ -15,14 +15,14 @@ namespace Shopping.Web.Razor.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            Cart = await basketService.LoadUserBasket();
+            Cart = await basketService.LoadUserBasketAsync();
             return Page();
         }
 
         public async Task<IActionResult> OnPostCheckOutAsync()
         {
             logger.LogInformation("Checkout page is called.");
-            Cart = await basketService.LoadUserBasket();
+            Cart = await basketService.LoadUserBasketAsync();
 
             if (!ModelState.IsValid)
             {

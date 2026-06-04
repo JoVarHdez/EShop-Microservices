@@ -17,17 +17,19 @@ namespace Shopping.Web.Razor.Pages
 
         public async Task<IActionResult> OnGetAsync(string categoryName)
         {
-            var response = await catalogService.GetProductsAsync();
-
-            CategoryList = response.Products.SelectMany(p => p.Category).Distinct();
-
             if (!string.IsNullOrWhiteSpace(categoryName))
             {
-                ProductList = response.Products.Where(p => p.Category.Contains(categoryName));
+                var categoryResponse = await catalogService.GetProductsByCategoryAsync(categoryName);
+                ProductList = categoryResponse.Products;
                 SelectedCategory = categoryName;
+
+                var allResponse = await catalogService.GetProductsAsync();
+                CategoryList = allResponse.Products.SelectMany(p => p.Category).Distinct();
             }
             else
             {
+                var response = await catalogService.GetProductsAsync();
+                CategoryList = response.Products.SelectMany(p => p.Category).Distinct();
                 ProductList = response.Products;
             }
 
@@ -39,7 +41,7 @@ namespace Shopping.Web.Razor.Pages
             logger.LogInformation("Adding product {ProductId} to the cart.", productId);
             var productResult = await catalogService.GetProductAsync(productId);
 
-            var basket = await basketService.LoadUserBasket();
+            var basket = await basketService.LoadUserBasketAsync();
 
             basket.Items.Add(new ShoppingCartItemModel
             {

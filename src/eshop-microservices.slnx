@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/APIGateways/">
-    <!-- <Project Path="APIGateways/YarpApiGateway/YarpApiGateway.csproj" Id="c8f7c816-dbe6-4d95-b2b7-107a9cf3ec49" /> -->
+    <Project Path="APIGateways/YarpApiGateway/YarpApiGateway.csproj" Id="c8f7c816-dbe6-4d95-b2b7-107a9cf3ec49" />
   </Folder>
   <Folder Name="/BuildingBlocks/">
     <Project Path="BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" Id="b58bae91-111e-4474-9077-b72aa63674c9" />
@@ -23,7 +23,7 @@
     <Project Path="Services/Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj" Id="380ff637-3352-4142-accc-d5929e80a27d" />
   </Folder>
   <Folder Name="/WebApps/">
-    <!-- <Project Path="WebApps/Shopping.Web.Razor/Shopping.Web.Razor.csproj" Id="96bf77ed-21d7-4971-8412-4e2ef285cb98" /> -->
+    <Project Path="WebApps/Shopping.Web.Razor/Shopping.Web.Razor.csproj" Id="96bf77ed-21d7-4971-8412-4e2ef285cb98" />
   </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />

@@ -1,28 +1,17 @@
-using Refit;
-using Shopping.Web.Razor.Services;
+using Shopping.Web.Razor;
+using Shopping.Web.Razor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-builder.Services.AddRefitClient<ICatalogService>()
-    .ConfigureHttpClient( c =>
-    {
-        c.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayAddress"]!);
-    });
+builder.Services.AddOptions<ApiSettings>()
+    .BindConfiguration("ApiSettings")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
-builder.Services.AddRefitClient<IBasketService>()
-    .ConfigureHttpClient( c =>
-    {
-        c.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayAddress"]!);
-    });
-
-builder.Services.AddRefitClient<IOrderingService>()
-    .ConfigureHttpClient( c =>
-    {
-        c.BaseAddress = new Uri(builder.Configuration["ApiSettings:GatewayAddress"]!);
-    });
+builder.Services.AddApiClients();
 
 
 var app = builder.Build();

@@ -114,11 +114,15 @@ This ensures event handlers run within the same unit of work as the database wri
 
 ## Database Initialization
 
-Call `InitializeDatabaseAsync` on startup after the application is built:
+Call `InitializeDatabaseAsync` only after the web host has started:
 
 ```csharp
+await app.StartAsync();
 await app.InitializeDatabaseAsync();
+await app.WaitForShutdownAsync();
 ```
+
+This ordering matters because `ApplicationDbContext` uses `DispatchDomainEventsInterceptor`, and that interceptor publishes through Wolverine `IMessageBus`. Wolverine cannot process messages until the underlying host has started, so calling `InitializeDatabaseAsync()` before `StartAsync()` can throw `WolverineHasNotStartedException`.
 
 This extension method:
 1. Runs any pending EF Core migrations (`MigrateAsync`).

@@ -48,9 +48,22 @@ builder.Host.UseWolverine(opts =>
     opts.UseFluentValidation();
     opts.Discovery.IncludeAssembly(typeof(CreateOrderHandler).Assembly);
 });
+
+var app = builder.Build();
+
+app.UseApiServices();
+
+await app.StartAsync();
+
+if (app.Environment.IsDevelopment())
+{
+  await app.InitializeDatabaseAsync();
+}
+
+await app.WaitForShutdownAsync();
 ```
 
-On startup, API middleware maps endpoints and enables global exception + health checks through UseApiServices.
+On startup, API middleware maps endpoints and enables global exception + health checks through `UseApiServices()`. In development, database migration and seed data run only after `StartAsync()` so Wolverine is already available for the EF Core domain-event interceptor.
 
 ## API Registration
 
@@ -119,6 +132,7 @@ dotnet run --project src/Services/Ordering/Ordering.API
 ```
 
 Development environment still initializes the Ordering database automatically.
+That initialization happens after the host starts, not immediately after `Build()`.
 
 ## Related Implementation Files
 

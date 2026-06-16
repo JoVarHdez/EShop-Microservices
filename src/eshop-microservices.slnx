@@ -25,6 +25,7 @@
   <Folder Name="/WebApps/">
     <Project Path="WebApps/Shopping.Web.Razor/Shopping.Web.Razor.csproj" Id="96bf77ed-21d7-4971-8412-4e2ef285cb98" />
   </Folder>
+  <Project Path="../test/Catalog.Tests/Catalog.Tests.csproj" />
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>

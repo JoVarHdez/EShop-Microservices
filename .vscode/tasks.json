@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "catalog-tests: docker + coverage",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "test/Catalog.Tests/run-with-docker.ps1",
+        "-Coverage"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "catalog-tests: docker only",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "test/Catalog.Tests/run-with-docker.ps1",
+        "-Coverage:$false"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

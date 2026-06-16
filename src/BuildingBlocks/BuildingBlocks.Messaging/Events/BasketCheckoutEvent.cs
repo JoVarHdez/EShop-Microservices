@@ -1,10 +1,13 @@
 ﻿namespace BuildingBlocks.Messaging.Events
 {
+    public record BasketCheckoutLineItem(Guid ProductId, string ProductName, int Quantity, decimal UnitPrice);
+
     public record BasketCheckoutEvent : IntegrationEvent
     {
         public string UserName { get; set; } = default!;
         public Guid CustomerId { get; set; } = default!;
         public decimal TotalPrice { get; set; } = default!;
+        public List<BasketCheckoutLineItem> Items { get; set; } = [];
 
         // Shipping and Billing Addresses
         public string FirstName { get; set; } = default!;

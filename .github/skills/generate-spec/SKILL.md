@@ -72,6 +72,8 @@ Use kebab-case for the filename (e.g., `employee-project-assignment.md`)
 
 **Human decisions only.** Open Questions should never be technical ("What database should we use?"). They should be business decisions ("Should admins be able to delete other users' projects?"). Always use a multi-choice format for open questions to make it easier for humans to answer.
 
+> Note: Remember in the open questions to give context for why the question matters and what the implications of each choice are. This helps stakeholders make informed decisions and also we're in a learning loop.
+
 ## Anti-Patterns to Avoid
 
 ❌ **Skipping clarification questions** → Results in a spec full of AI assumptions
@@ -79,6 +81,7 @@ Use kebab-case for the filename (e.g., `employee-project-assignment.md`)
 ❌ **Vague acceptance criteria** → "The system should be fast" is not testable
 ❌ **Empty "Out of Scope" section** → Always define boundaries
 ❌ **Answering your own open questions** → Flag them for the human to decide
+❌ **Continue to implementation plan** → The spec is a separate deliverable. Do not start implementation planning until the spec is complete and approved.
 
 ## Reference Materials
 

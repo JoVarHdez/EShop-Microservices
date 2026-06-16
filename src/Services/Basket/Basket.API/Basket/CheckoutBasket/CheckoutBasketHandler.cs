@@ -31,6 +31,8 @@ namespace Basket.API.Basket.CheckoutBasket
 
             var eventMessage = command.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
             eventMessage.TotalPrice = basket.TotalPrice;
+            eventMessage.Items = [.. basket.Items.Select(item =>
+                new BasketCheckoutLineItem(item.ProductId, item.ProductName, item.Quantity, item.Price))];
 
             await publishEndpoint.Publish(eventMessage, cancellationToken);
 

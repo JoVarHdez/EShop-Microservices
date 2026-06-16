@@ -34,7 +34,11 @@ namespace Basket.API.Basket.StoreBasket
             // Communicate with Discount gRPC service to get the discount amount for each product in the shopping cart and deduct it from the product price
             foreach (var product in cart.Items)
             {
-                var discount = await discountProtoService.GetDiscountAsync(new GetDiscountRequest { ProductName = product.ProductName }, cancellationToken: cancellationToken);
+                var discount = await discountProtoService.GetDiscountAsync(new GetDiscountRequest
+                {
+                    ProductId = product.ProductId.ToString(),
+                    ProductName = product.ProductName
+                }, cancellationToken: cancellationToken);
                 product.Price -= discount.Amount;
             }
         }

@@ -1,23 +1,24 @@
 using Shopping.Web.Razor.Models.Basket;
+using Shopping.Web.Razor.Models;
 
 namespace Shopping.Web.Razor.Services;
 
-public class BasketService(IBasketApiClient basketApiClient) : IBasketService
+public class BasketService(IBasketApiClient basketApiClient, IDevUserContextProvider devUserContextProvider) : IBasketService
 {
-    private const string DefaultUserName = "swn";
+    private string CurrentUserName => devUserContextProvider.GetCurrent().UserName;
 
     public async Task<ShoppingCartModel> LoadUserBasketAsync()
     {
         try
         {
-            var response = await basketApiClient.GetBasketAsync(DefaultUserName);
+            var response = await basketApiClient.GetBasketAsync(CurrentUserName);
             return response.Cart;
         }
         catch (Exception)
         {
             return new ShoppingCartModel
             {
-                UserName = DefaultUserName,
+                UserName = CurrentUserName,
                 Items = [],
             };
         }

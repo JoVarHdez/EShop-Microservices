@@ -6,6 +6,12 @@ namespace Discount.Grpc.Repository;
 
 public class DiscountRepository(DiscountContext dbContext) : IDiscountRepository
 {
+    public async Task<Coupon?> GetDiscountByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Coupons
+            .FirstOrDefaultAsync(c => c.ProductId == productId, cancellationToken);
+    }
+
     public async Task<Coupon?> GetDiscountAsync(string productName, CancellationToken cancellationToken = default)
     {
         return await dbContext.Coupons

@@ -33,11 +33,8 @@ namespace Ordering.Application.Orders.EventHandlers.Integration
                 BillingAddress: addressDto,
                 Payment: paymentDto,
                 Status: OrderStatus.Pending,
-                OrderItems: [
-                    // In a real application, you would likely retrieve product details from a database or another service
-                    new OrderItemDto(orderId, new Guid("00000000-0000-0000-0000-000000000001"), 2, 500),
-                    new OrderItemDto(orderId, new Guid("00000000-0000-0000-0000-000000000002"), 1, 400)
-                ]);
+                OrderItems: [.. message.Items.Select(item =>
+                    new OrderItemDto(orderId, item.ProductId, item.Quantity, item.UnitPrice))]);
 
             return new CreateOrderCommand(orderDto);
         }

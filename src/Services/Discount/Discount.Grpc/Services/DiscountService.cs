@@ -11,15 +11,23 @@ namespace Discount.Grpc.Services
     {
         public override async Task<CouponModel> GetDiscount(GetDiscountRequest request, ServerCallContext context)
         {
-            var coupon = await repository.GetDiscountAsync(request.ProductName, context.CancellationToken)
+            Coupon? coupon = null;
+
+            if (Guid.TryParse(request.ProductId, out var productId))
+            {
+                coupon = await repository.GetDiscountByProductIdAsync(productId, context.CancellationToken);
+            }
+
+            coupon ??= await repository.GetDiscountAsync(request.ProductName, context.CancellationToken)
                 ?? new Coupon
             {
+                ProductId = Guid.Empty,
                 ProductName = request.ProductName,
                 Amount = 0,
                 Description = "No discount available"
             };
 
-            logger.LogInformation("Discount retrieved for ProductName: {ProductName}, Amount: {Amount}", coupon.ProductName, coupon.Amount);
+            logger.LogInformation("Discount retrieved for ProductId: {ProductId}, ProductName: {ProductName}, Amount: {Amount}", coupon.ProductId, coupon.ProductName, coupon.Amount);
 
             var couponModel = coupon.Adapt<CouponModel>();
             return couponModel;

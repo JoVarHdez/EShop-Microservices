@@ -5,7 +5,7 @@ using Shopping.Web.Razor.Services;
 
 namespace Shopping.Web.Razor.Pages
 {
-    public class CheckoutModel(IBasketService basketService, ILogger<CheckoutModel> logger)
+    public class CheckoutModel(IBasketService basketService, IDevUserContextProvider devUserContextProvider, ILogger<CheckoutModel> logger)
         : PageModel
     {
         [BindProperty]
@@ -29,9 +29,9 @@ namespace Shopping.Web.Razor.Pages
                 return Page();
             }
 
-            // Assume the user is authenticated and we can get the user id and name from the authentication context
-            Order.CustomerId = new Guid("00000000-0000-0000-0000-000000000001");
-            Order.UserName = "test";
+            var currentUser = devUserContextProvider.GetCurrent();
+            Order.CustomerId = currentUser.CustomerId;
+            Order.UserName = currentUser.UserName;
             Order.TotalPrice = Cart.TotalPrice;
 
             await basketService.CheckoutBasketAsync(new CheckoutBasketRequest(Order));

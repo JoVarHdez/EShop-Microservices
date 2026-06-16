@@ -1,5 +1,6 @@
 using Shopping.Web.Razor;
 using Shopping.Web.Razor.Models;
+using Shopping.Web.Razor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,13 @@ builder.Services.AddOptions<ApiSettings>()
     .BindConfiguration("ApiSettings")
     .ValidateDataAnnotations()
     .ValidateOnStart();
+
+builder.Services.AddOptions<DevUserContext>()
+    .BindConfiguration("DevUserContext")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddScoped<IDevUserContextProvider, DevUserContextProvider>();
 
 builder.Services.AddApiClients();
 

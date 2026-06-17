@@ -28,6 +28,7 @@
     <Project Path="../test/Catalog.Tests/Catalog.Tests.csproj" />
     <Project Path="../test/Discount.Tests/Discount.Tests.csproj" />
     <Project Path="../test/Ordering.Tests/Ordering.Tests.csproj" />
+    <Project Path="../test/Shopping.Web.Razor.Tests/Shopping.Web.Razor.Tests.csproj" />
   </Folder>
   <Folder Name="/WebApps/">
     <Project Path="WebApps/Shopping.Web.Razor/Shopping.Web.Razor.csproj" Id="96bf77ed-21d7-4971-8412-4e2ef285cb98" />

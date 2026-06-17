@@ -7,7 +7,9 @@ namespace Shopping.Web.Razor;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddApiClients(this IServiceCollection services)
+    public static IServiceCollection AddApiClients(
+        this IServiceCollection services,
+        Func<HttpMessageHandler>? primaryHandlerFactory = null)
     {
         static void ConfigureClient(IServiceProvider sp, HttpClient client)
         {
@@ -15,17 +17,35 @@ public static class ServiceExtensions
             client.BaseAddress = new Uri(settings.GatewayAddress);
         }
 
-        services.AddRefitClient<ICatalogService>()
-            .ConfigureHttpClient(ConfigureClient)
-            .AddStandardResilienceHandler();
+        var catalogClient = services.AddRefitClient<ICatalogService>()
+            .ConfigureHttpClient(ConfigureClient);
 
-        services.AddRefitClient<IBasketApiClient>()
-            .ConfigureHttpClient(ConfigureClient)
-            .AddStandardResilienceHandler();
+        if (primaryHandlerFactory is not null)
+        {
+            catalogClient.ConfigurePrimaryHttpMessageHandler(primaryHandlerFactory);
+        }
 
-        services.AddRefitClient<IOrderingService>()
-            .ConfigureHttpClient(ConfigureClient)
-            .AddStandardResilienceHandler();
+        catalogClient.AddStandardResilienceHandler();
+
+        var basketClient = services.AddRefitClient<IBasketApiClient>()
+            .ConfigureHttpClient(ConfigureClient);
+
+        if (primaryHandlerFactory is not null)
+        {
+            basketClient.ConfigurePrimaryHttpMessageHandler(primaryHandlerFactory);
+        }
+
+        basketClient.AddStandardResilienceHandler();
+
+        var orderingClient = services.AddRefitClient<IOrderingService>()
+            .ConfigureHttpClient(ConfigureClient);
+
+        if (primaryHandlerFactory is not null)
+        {
+            orderingClient.ConfigurePrimaryHttpMessageHandler(primaryHandlerFactory);
+        }
+
+        orderingClient.AddStandardResilienceHandler();
 
         services.AddScoped<IBasketService, BasketService>();
 

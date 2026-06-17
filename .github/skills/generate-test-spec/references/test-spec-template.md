@@ -78,7 +78,7 @@ Describe what quality risks this specification addresses and why this test scope
 
 ## 8. Open Questions
 
-- Question: [decision needed]
+1. Question: [decision needed]
   - Why this matters: [impact on quality/speed/maintenance]
   - Option A: [choice]
     - Implication: [impact]

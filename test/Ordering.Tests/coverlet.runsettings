@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <ExcludeByFile>**/Program.cs,**/obj/**,**/Ordering.Infrastructure/Data/Migrations/**,**/Ordering.Infrastructure/Extensions/InitialData.cs,**/BuildingBlocks/BuildingBlocks/**,**/BuildingBlocks/BuildingBlocks.Messaging/**</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

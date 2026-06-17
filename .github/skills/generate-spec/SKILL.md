@@ -18,6 +18,8 @@ Create business-focused specification documents that serve as contracts between 
 - When requirements are vague and need to be clarified and formalized
 - When planning a feature that will be built across multiple sessions
 
+Use `generate-test-spec` instead when the user asks for a testing-focused specification (coverage targets, test scope, provider-dependent strategy, or test execution constraints).
+
 ## Process
 
 ### Step 1: Clarify the Feature

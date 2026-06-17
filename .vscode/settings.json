@@ -4,6 +4,10 @@
         "/^pwsh -NoProfile -ExecutionPolicy Bypass -File test/Catalog\\.Tests/run-with-docker\\.ps1 -Coverage$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^pwsh -NoProfile -ExecutionPolicy Bypass -File test/Basket\\.Tests/run-with-coverage\\.ps1$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

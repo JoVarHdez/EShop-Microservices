@@ -15,7 +15,9 @@ namespace Basket.API.Basket.CheckoutBasket
         public CheckoutBasketCommandValidator()
         {
             RuleFor(x => x.BasketCheckoutDto).NotNull().WithMessage("BasketCheckoutDto cannot be null.");
-            RuleFor(x => x.BasketCheckoutDto.UserName).NotEmpty().WithMessage("UserName cannot be empty.");
+            RuleFor(x => x.BasketCheckoutDto.UserName)
+                .NotEmpty().WithMessage("UserName cannot be empty.")
+                .When(x => x.BasketCheckoutDto is not null);
         }
     }
 

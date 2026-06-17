@@ -14,7 +14,9 @@ namespace Basket.API.Basket.StoreBasket
         public StoreBasketCommandValidator()
         {
             RuleFor(x => x.Cart).NotNull().WithMessage("Shopping cart cannot be null.");
-            RuleFor(x => x.Cart.UserName).NotEmpty().WithMessage("User name cannot be empty.");
+            RuleFor(x => x.Cart.UserName)
+                .NotEmpty().WithMessage("User name cannot be empty.")
+                .When(x => x.Cart is not null);
         }
     }
 
